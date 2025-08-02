@@ -1,0 +1,133 @@
+Claude Breakdown: Chunk 1 – System Overview + Core Architecture (UPDATED)
+
+📍 Scope
+
+Define the foundational architecture of ClubOS V2:
+* Action-based, mobile-first operator interface
+* Single-LLM agent per deployment with resilience and fallback strategies
+* Modular routing to tools (Claude, OpenPhone, NinjaOne, DB, etc.)
+* No chatbot behavior – action-only logic, no multi-turn conversational flow
+* Starts human-in-loop, builds toward autonomous trust via feedback loops
+* Built-in rate limiting, cost controls, and error handling
+
+🔄 Cross-Referenced Corrections
+Early Plan                    → Final Decision
+4 LLMs (tech, booking, etc.) → Single unified LLM per instance
+Static SOP logic             → AI-monitored, human-approved updates
+Human escalation always manual → Escalation logic is toggle-configurable
+No error handling            → Graceful degradation with fallbacks
+
+📦 Dependencies
+* OpenAI or Claude runtime w/ tool call support
+* Railway + Vercel deployment stack (Node backend, Next.js frontend)
+* NinjaOne, Ubiquiti, Skedda or Jason's booking API, OpenPhone
+* Claude (or equivalent) for file parsing + SOP injection
+* Rate limiting middleware and token tracking
+
+🔧 Tasks
+
+[1.1] Set System Identity and Mode
+* Default LLM agent name: OperatorGPT
+* Only one agent per deployment
+* Must be able to:
+  ○ Take customer messages
+  ○ Route action requests (reset, unlock, etc.)
+  ○ Search + invoke SOP logic
+  ○ Call Claude for SOP parsing or feedback review
+  ○ Handle errors gracefully with fallback to human
+
+[1.2] Define LLM Autonomy Profile (Enhanced)
+{
+  "tech": {
+    "autonomy": true,
+    "max_fallbacks": 1,
+    "confidence_threshold": 0.85,
+    "require_booking": true,
+    "time_restrictions": null,
+    "cooldown_seconds": 900
+  },
+  "booking": {
+    "autonomy": false,
+    "confidence_threshold": 0.95,
+    "require_booking": false,
+    "time_restrictions": {"start": "08:00", "end": "22:00"}
+  },
+  "access": {
+    "autonomy": true,
+    "rules": ["within 10 min of booking", "no flags"],
+    "confidence_threshold": 0.90,
+    "max_attempts_per_booking": 2
+  },
+  "faq": {
+    "autonomy": true,
+    "confidence_threshold": 0.70,
+    "use_cheaper_model": true
+  }
+}
+
+[1.3] Implement Control Toggles & Error Handling
+* Each autonomy behavior is controlled by:
+  ○ Action category
+  ○ Booking metadata
+  ○ Confidence score
+  ○ System health status
+* Fallback logic is not hardcoded – defined in config
+* Error states:
+  ○ LLM timeout → Mark thread "awaiting_human"
+  ○ API failure → Log error, notify operator
+  ○ Low confidence → Escalate with reason
+  ○ Rate limit hit → Queue or defer action
+
+[1.4] Claude Role (with Resilience)
+* Claude is only used for:
+  ○ SOP file ingestion
+  ○ Conflict detection
+  ○ Knowledge merge suggestions
+  ○ Flagged feedback loop processing
+* All Claude edits are flagged for human approval
+* Claude offline handling:
+  ○ SOP edit attempts deferred to queue
+  ○ Operator notified of degraded service
+  ○ System continues with cached SOPs
+
+[1.5] Rate Limiting & Cost Controls
+* Per-thread rate limits:
+  ○ One LLM invocation per 15 seconds per thread
+  ○ Configurable per deployment
+* Per-action cooldowns:
+  ○ Max 2 resets per bay per hour
+  ○ Max 1 door unlock per booking (unless failed)
+  ○ Cooldown violations trigger escalation
+* Token management:
+  ○ Max 500 tokens per response (configurable)
+  ○ Daily/monthly caps per location
+  ○ Model tiering:
+    - GPT-4o for complex/high-confidence needs
+    - GPT-3.5/Claude Instant for FAQ and lookups
+    - Cached responses for repeated queries
+
+[1.6] Load Distribution Preparation
+* Single agent design optimized for:
+  ○ Priority queue (emergency threads first)
+  ○ FIFO processing with timeout handling
+  ○ Future: parallel instances per location
+  ○ Future: load balancer for multi-site ops
+
+🎯 Expected Behavior
+* System starts with OperatorGPT receiving all inbound messages
+* No other assistants are used
+* Based on message intent and context, the LLM:
+  ○ Executes actions (if allowed and not rate-limited)
+  ○ Escalates if configured to or on error
+  ○ Logs all outcomes with performance metrics
+* System degrades gracefully:
+  ○ Falls back to human on errors
+  ○ Queues non-urgent requests during high load
+  ○ Uses cheaper models for simple queries
+* Claude only invoked when:
+  ○ New knowledge is uploaded
+  ○ SOPs need review or cleanup
+  ○ Human requests change
+  ○ And system confirms Claude is available
+
+proceed to Chunk 2: Message Flow, Thread State, and Escalation Logic.

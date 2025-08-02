@@ -1,0 +1,166 @@
+ClubOS V3 - Chunk 5: Knowledge Upload, Feedback Dashboard, and Learning Controls
+
+📍 Scope
+
+Define how operators add, modify, or validate new knowledge in ClubOS. Covers the Knowledge Upload interface, Claude-assisted SOP ingestion, tagging of high-quality interactions, and mechanisms for flagging or reinforcing learning.
+
+🔄 Cross-Referenced Corrections
+Early Plan                    → Final Decision
+Manual SOP updates only      → AI-assisted upload + Claude categorization
+No tagging of message quality → Operators can star/score high-quality interactions
+Learning from all messages   → Learning restricted to admin accounts + tagged threads
+Binary learning signals      → 5-star scoring system with confidence weights
+No bulk import              → CSV/JSON batch import with validation
+
+📦 Dependencies
+* Claude SOP parser tool (reads input → structured format)
+* Feedback dashboard UI (in Admin panel)
+* Access to SOP DB and Message Log store
+* Role-based permission control
+* Validation engine for action registry
+
+🔧 Tasks
+
+[5.1] Knowledge Upload Flow with Bulk Support
+Operators can:
+* Paste freeform rule logic (e.g. "Refund allowed if >10min before session")
+* Upload a document or SOP file
+* Bulk import via CSV/JSON with format:
+  ○ Multiple SOPs per file
+  ○ Standardized columns/fields
+  ○ Auto-detection of duplicates
+* Select optional category and metadata
+
+Claude does:
+* Categorization
+* Conflict detection
+* Structure generation
+* Duplicate flagging in bulk imports
+* Drafts sop.json format and sends to review queue
+
+UI presents:
+* Claude's suggested SOP summary
+* Source attribution
+* Auto-assigned category + fallback
+* Validation results
+* Accept / Edit / Reject (per SOP or batch)
+
+[5.2] Knowledge Validation Pre-Ingest
+Before accepting any SOP:
+* Verify primary_action exists in action registry
+* Check trigger_phrases for collisions:
+  ○ Exact match conflicts
+  ○ High similarity warnings
+  ○ Category overlap alerts
+* Validate against locked/high-confidence SOPs
+* Check dependencies exist
+* Verify context requirements are valid
+
+Validation output:
+{
+  "validation_status": "warning",
+  "issues": [
+    "Trigger phrase 'reset' conflicts with tech-001",
+    "Action 'custom_reset' not in registry"
+  ],
+  "suggestions": ["Use 'reset_trackman_custom' instead"]
+}
+
+[5.3] Source Attribution & Tracking
+Every SOP includes source metadata:
+{
+  "source_type": "customer_feedback" | "operator_experience" | "vendor_documentation" | "claude_suggestion",
+  "source_reference": "ticket-1234",
+  "contributed_by": "mike",
+  "verification_status": "pending" | "verified" | "disputed",
+  "import_batch": "bulk_import_2025_08_01"
+}
+
+This flows through to change_log for full auditability.
+
+[5.4] Enhanced Feedback Dashboard
+UI interface shows:
+* Auto-detected candidate rules (from message logs)
+* Flagged ambiguous threads
+* Duplicate SOPs
+* Pending Claude merges
+* Stale SOPs (unused 90+ days)
+* Performance degradation alerts
+* History of all past updates (sortable/filterable)
+
+Operators can:
+* Approve Claude suggestions
+* Manually edit draft SOPs
+* Re-tag past logs
+* Archive old or unused logic
+* Score outcomes (1-5 stars)
+* Bulk approve/reject
+
+[5.5] Gradual Learning Signals
+Replace binary tagging with scored feedback:
+{
+  "type": "learning_signal",
+  "source": "message",
+  "by": "admin_mike",
+  "linked_sop": "booking-022",
+  "outcome_score": 4,  // 1-5 stars
+  "confidence_adjustment": 0.15,
+  "notes": "Worked but took longer than expected"
+}
+
+Score interpretation:
+* 5 stars: Perfect outcome, boost confidence
+* 4 stars: Good outcome, minor improvement needed
+* 3 stars: Acceptable, no change
+* 2 stars: Poor outcome, reduce confidence
+* 1 star: Failed, flag for review
+
+[5.6] Learning Access Controls
+* Only approved roles can create learning tags
+* Default: admin and supervisor accounts
+* Role config:
+{
+  "role": "tech",
+  "can_tag_learning": false,
+  "can_upload_knowledge": true,
+  "can_bulk_import": false,
+  "can_override_validation": false
+}
+
+AI learns only from:
+* Approved tagged threads (3+ stars)
+* Claude-reviewed logic
+* Operator-marked canonical flows
+
+[5.7] Knowledge Decay & Maintenance
+Automatic decay detection:
+* SOPs unused for 90 days → "stale" flag
+* SOPs with <50% success rate → "review" flag
+* SOPs overridden >5 times → "disputed" flag
+
+Monthly maintenance:
+* Claude generates cleanup report
+* Groups similar stale SOPs
+* Suggests archival list
+* Flags for revalidation
+
+[5.8] Future: A/B Testing (V2.1)
+Schema supports but not implemented:
+{
+  "staging_status": "draft" | "test" | "live",
+  "test_config": {
+    "variant_percentage": 0.1,
+    "min_test_cases": 20,
+    "success_threshold": 0.8
+  }
+}
+
+🎯 Expected Behavior
+* SOP ingestion is clean, validated, and supports bulk operations
+* Claude acts as a logic processor with validation – not as an auto-updater
+* Operators curate what gets learned from with granular scoring
+* Source attribution ensures accountability
+* Stale knowledge is automatically flagged for cleanup
+* Feedback dashboard is the central place for improving logic
+
+proceed to Chunk 6: Logging, Audit Trails, and Change History

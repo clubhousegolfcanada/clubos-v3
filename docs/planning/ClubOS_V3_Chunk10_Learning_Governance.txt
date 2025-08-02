@@ -1,0 +1,220 @@
+ClubOS V3 - Chunk 10: Learning Governance, Category Merging, and SOP Evolution
+
+📍 Scope
+
+Define how ClubOS V3 evolves over time: how Claude proposes new logic, how categories are split or merged, and how AI's learning is human-guided, audit-logged, and scoped to only high-quality signals. Prevents logic sprawl and maintains trust.
+
+🔄 Cross-Referenced Corrections
+Early Plan                    → Final Decision
+All messages used for learning → Only admin-approved or tagged threads contribute to LLM learning
+Static SOP categories         → SOP categories can evolve, merge, or branch based on patterns
+No pattern summarization      → Claude can propose new categories based on ambiguous clustering
+No learning metrics          → Full dashboard with KPIs and effectiveness tracking
+No complexity limits         → Budget controls prevent SOP sprawl
+
+📦 Dependencies
+* Claude for similarity clustering + SOP suggestion
+* Weekly background job for log + SOP review
+* Feedback dashboard interface with metrics
+* SOP version store with merge/edit capabilities
+* Learning audit trail system
+
+🔧 Tasks
+
+[10.1] Learning Permissions and Filtering
+AI learns only from:
+* Threads marked flag_for_learning
+* Operators with learning-enabled roles
+* Interactions where SOP was followed and outcome confirmed
+* Minimum outcome score of 3+ stars
+
+All others are archived for reference but not used as training signal.
+
+Operator tagging (UI):
+⭐️ "Use this phrasing in future"
+✅ "Great outcome, promote this logic"
+🎯 "Perfect example of this SOP"
+
+Backend stores:
+{
+  "type": "learning_tag",
+  "linked_thread": "msg-9012",
+  "linked_sop": "booking-011",
+  "by": "admin_mike",
+  "confidence_boost": 0.2,
+  "outcome_score": 4
+}
+
+[10.2] Learning Metrics Dashboard
+Weekly metrics displayed in Feedback Dashboard:
+{
+  "learning_effectiveness": {
+    "period": "2025-08-01_to_2025-08-07",
+    "sops_created": 45,
+    "sops_merged": 12,
+    "sops_archived": 8,
+    "categories_split": 2,
+    "success_rate_improvement": "+15%",
+    "false_positive_rate": "3%",
+    "avg_confidence_change": "+0.08",
+    "operator_overrides": 23,
+    "learning_signals_processed": 156
+  }
+}
+
+Visualizations include:
+* SOP performance trends
+* Category growth/shrinkage
+* Operator contribution leaderboard
+* Claude suggestion acceptance rate
+
+[10.3] Category Merge + Evolution with Budget Controls
+When Claude detects patterns:
+* High overlap across SOPs → Merge proposal
+* Growing pool of edge cases → Split proposal
+* Seasonal patterns → Time-based activation
+
+Category limits:
+{
+  "category": "booking",
+  "limits": {
+    "max_active_sops": 50,
+    "max_dependency_depth": 3,
+    "complexity_score_limit": 100
+  },
+  "current": {
+    "active_sops": 47,
+    "dependency_depth": 2,
+    "complexity_score": 85
+  }
+}
+
+If limits approached:
+* Claude prioritizes merge/cleanup
+* Suggests archiving unused SOPs
+* Flags redundant logic
+
+Admin review modal:
+"These 19 messages appear to describe warm-up/cooldown processes.
+Would you like to create a new SOP category?"
+
+Options:
+* Create subcategory
+* Merge into existing
+* Defer decision
+* Archive low-performers
+
+[10.4] SOP Change Summarization + Digest
+Claude auto-generates weekly report:
+{
+  "week_ending": "2025-08-07",
+  "summary": {
+    "merged_rules": [
+      {
+        "from": ["booking-012", "booking-018"],
+        "to": "booking-unified-001",
+        "reason": "Duplicate refund logic"
+      }
+    ],
+    "new_categories": ["simulator_prep"],
+    "deprecated_sops": ["tech-legacy-001"],
+    "performance_improvements": [
+      {
+        "sop": "tech-013",
+        "before": "72% success",
+        "after": "89% success"
+      }
+    ]
+  }
+}
+
+Each change logged in change_log:
+{
+  "change_type": "category_merge",
+  "merged_sops": ["booking-012", "booking-018"],
+  "summary": "Unified last-minute refund logic",
+  "status": "approved",
+  "approved_by": "admin_mike",
+  "learning_sources": ["msg-123", "msg-456"]
+}
+
+[10.5] Preventing Logic Drift
+To avoid false pattern learning:
+* Claude flags outlier threads
+* High-volume SOPs auto-reviewed if override rate > 20%
+* Operator can lock SOPs:
+{
+  "sop_id": "emergency-001",
+  "mergeable": false,
+  "allow_override_learning": false,
+  "locked_by": "admin",
+  "reason": "Critical safety logic"
+}
+
+Drift detection:
+* Weekly similarity analysis
+* Flag SOPs with declining performance
+* Alert on category confusion (high mis-routing)
+
+[10.6] Learning Audit Trail
+Complete traceability of learning decisions:
+{
+  "learning_event": "sop_promoted",
+  "event_id": "learn-29018",
+  "timestamp": "2025-08-01T10:00:00Z",
+  "source_threads": ["msg-123", "msg-456"],
+  "source_tags": [
+    {"operator": "mike", "score": 5},
+    {"operator": "sarah", "score": 4}
+  ],
+  "operator_votes": {
+    "mike": "approve",
+    "sarah": "approve"
+  },
+  "confidence_change": "+0.15",
+  "sop_affected": "tech-013",
+  "performance_baseline": {
+    "before": {"success_rate": 0.72, "uses": 45},
+    "projected": {"success_rate": 0.85}
+  }
+}
+
+Audit trail queryable by:
+* Date range
+* Operator involvement
+* SOP affected
+* Performance impact
+
+[10.7] Future: Staging Environment (V2.1)
+Schema supports but not implemented:
+{
+  "staging_mode": {
+    "enabled": true,
+    "test_percentage": 0.1,
+    "shadow_compare": true,
+    "min_test_cases": 20,
+    "auto_promote_threshold": 0.9
+  }
+}
+
+[10.8] Future: Conflict Resolution (Teams > 2)
+For larger teams:
+{
+  "consensus_config": {
+    "requires_operator_consensus": true,
+    "min_approvals": 2,
+    "voting_window_hours": 24,
+    "tiebreaker": "admin_override"
+  }
+}
+
+🎯 Expected Behavior
+* ClubOS evolves only from trusted, intentional inputs with metrics
+* Learning effectiveness tracked and visible weekly
+* Category complexity managed through budget controls
+* Claude handles all structural improvement proposals
+* Complete audit trail for every learning decision
+* Operators control whether logic grows or consolidates
+* System scales in clarity, not complexity
+
+proceed to Chunk 11: Ticket System for Facilities and Tech

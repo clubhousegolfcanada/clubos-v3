@@ -1,0 +1,99 @@
+Claude Breakdown: Chunk 6 ? Logging, Audit Trails, and Change History
+
+? Scope
+
+Define how ClubOS V2 logs all relevant actions, conversations, decisions, and changes. This includes AI actions, human overrides, SOP edits, escalations, and Claude-proposed modifications. Ensures full traceability and controlled learning.
+
+?? Cross-Referenced Corrections
+Early PlanFinal DecisionFlat message logs? Structured logs with context, category, linked actionsAll interactions learned from? Only tagged/logged messages with learning markersClaude edits not tracked? All Claude-suggested changes logged + versioned
+?? Dependencies
+* action_log, message_log, and change_log DB tables
+* Internal log viewer (or log stream piped to external viewer like Supabase/Hasura UI)
+* Optional: daily/weekly export to GDrive or backup
+
+?? Tasks
+
+[6.1] Action Log (System-Level)
+
+Every AI or operator action is recorded as:
+{
+  "type": "reset_trackman",
+  "initiated_by": "OperatorGPT",
+  "booking_id": "bk-3281",
+  "bay": "2",
+  "location": "Bedford",
+  "outcome": "success",
+  "sop_id": "tech-008",
+  "timestamp": "2025-08-01T15:11:32Z",
+  "confirmed_by": "system"
+}
+Includes:
+* Execution result
+* System confirmation (e.g. PC back online)
+* Related SOP and operator if involved
+
+[6.2] Message Log (Thread Context)
+
+Each customer message + response is logged:
+{
+  "thread_id": "msg-9817",
+  "customer_id": "cust-20012",
+  "message": "TrackMan isn?t working",
+  "ai_reply": "I?ve reset it ? try now.",
+  "status": "escalated",
+  "intent": "tech_issue",
+  "linked_actions": ["reset_trackman"],
+  "tags": ["flag_for_learning"]
+}
+Used for:
+* Feedback dashboard
+* Training signal
+* Thread history reconstruction
+
+[6.3] Change Log (SOP & Claude)
+
+Tracks all Claude suggestions + human edits:
+{
+  "change_type": "merge",
+  "source_sop": "booking-003",
+  "target_sop": "booking-007",
+  "proposed_by": "Claude",
+  "approved_by": "mike",
+  "diff_summary": "Combined refund windows for <10min bookings",
+  "status": "live",
+  "timestamp": "2025-08-01T15:42:10Z"
+}
+All SOPs include:
+* Last editor
+* Edit history
+* Approval trail
+* Rollback capability (manual)
+
+[6.4] Log-Based Learning Signal Control
+
+Only logs with:
+* Tagged "flag_for_learning", or
+* "confirmed_success" attached
+? Are pulled into Claude?s weekly logic review
+
+Others archived but not used for pattern generation
+
+[6.5] Optional: Log Export + Sync
+* Logs can be:
+o Exported to CSV
+o Backed up nightly to GDrive
+o Piped to another system (e.g. S3, Google Cloud, or Postgres clone)
+
+Claude can summarize logs weekly into:
+* Most used SOPs
+* Failed actions
+* Escalation patterns
+
+? Expected Behavior
+* Full traceability of all decisions and actions
+* Claude doesn?t hallucinate from logs ? it learns only what?s been marked
+* Any past decision, escalation, or edit can be audited
+* Human always has final say in what becomes SOP
+
+proceed to Chunk 7: System Monitoring, Device Status, and Environment Triggers?
+

@@ -1,0 +1,203 @@
+ClubOS V3 - Chunk 6: Logging, Audit Trails, and Change History
+
+📍 Scope
+
+Define how ClubOS V3 logs all relevant actions, conversations, decisions, and changes. This includes AI actions, human overrides, SOP edits, escalations, and Claude-proposed modifications. Ensures full traceability, compliance, and controlled learning.
+
+🔄 Cross-Referenced Corrections
+Early Plan                    → Final Decision
+Flat message logs            → Structured logs with context, category, linked actions
+All interactions learned from → Only tagged/logged messages with learning marker
+Claude edits not tracked     → All Claude-suggested changes logged + versioned
+No retention policy          → Tiered retention with hot/cold/archive storage
+Basic logging                → Correlation IDs, privacy controls, real-time alerts
+
+📦 Dependencies
+* action_log, message_log, and change_log DB tables
+* Internal log viewer (or log stream piped to external viewer)
+* Async logging pipeline for performance
+* Optional: daily/weekly export to GDrive or backup
+* Correlation ID generator
+
+🔧 Tasks
+
+[6.1] Action Log with Correlation (System-Level)
+Every AI or operator action is recorded as:
+{
+  "log_id": "log-2930812",
+  "correlation_id": "session-9817",
+  "type": "reset_trackman",
+  "initiated_by": "OperatorGPT",
+  "booking_id": "bk-3281",
+  "thread_id": "msg-9817",
+  "bay": "2",
+  "location": "Bedford",
+  "outcome": "success",
+  "sop_id": "tech-008",
+  "timestamp": "2025-08-01T15:11:32Z",
+  "confirmed_by": "system",
+  "duration_ms": 2834,
+  "pii_redacted": false
+}
+
+Includes:
+* Execution result with timing
+* System confirmation (e.g. PC back online)
+* Related SOP and operator if involved
+* Correlation to full session
+
+[6.2] Message Log with Privacy Controls (Thread Context)
+Each customer message + response is logged:
+{
+  "log_id": "msg-log-8291",
+  "correlation_id": "session-9817",
+  "thread_id": "msg-9817",
+  "customer_id": "cust-20012",
+  "message": "TrackMan isn't working",
+  "message_redacted": false,
+  "ai_reply": "I've reset it – try now.",
+  "status": "escalated",
+  "intent": "tech_issue",
+  "linked_actions": ["reset_trackman"],
+  "tags": ["flag_for_learning"],
+  "privacy_flags": {
+    "deletion_requested": false,
+    "excluded_from_training": false,
+    "pii_present": true
+  }
+}
+
+Used for:
+* Feedback dashboard
+* Training signal (if allowed)
+* Thread history reconstruction
+* Compliance requests
+
+[6.3] Change Log with Full Attribution (SOP & Claude)
+Tracks all Claude suggestions + human edits:
+{
+  "change_id": "chg-39012",
+  "correlation_id": "admin-session-291",
+  "change_type": "merge",
+  "source_sop": "booking-003",
+  "target_sop": "booking-007",
+  "proposed_by": "Claude",
+  "approved_by": "mike",
+  "diff_summary": "Combined refund windows for <10min bookings",
+  "status": "live",
+  "timestamp": "2025-08-01T15:42:10Z",
+  "rollback_available": true,
+  "previous_version": 2
+}
+
+All SOPs include:
+* Last editor
+* Edit history with diffs
+* Approval trail
+* Rollback capability (manual)
+
+[6.4] Log Retention Policy
+Tiered retention by log type:
+{
+  "action_log": {
+    "hot_storage": "30_days",
+    "cold_storage": "1_year", 
+    "archive": "7_years"
+  },
+  "message_log": {
+    "hot_storage": "90_days",
+    "cold_storage": "2_years",
+    "archive": "7_years",
+    "pii_retention": "delete_after_2_years"
+  },
+  "change_log": {
+    "hot_storage": "forever",  // Always accessible
+    "archive": "never"         // Permanent record
+  }
+}
+
+* Hot: Real-time access in UI
+* Cold: Searchable but slower
+* Archive: Compliance only
+
+[6.5] Log Correlation & Session Tracking
+Every customer interaction generates:
+* correlation_id: Links all related events
+* Groupable by:
+  ○ customer_id: All interactions from customer
+  ○ booking_id: All events for booking
+  ○ thread_id: Specific conversation
+  ○ location/bay: Facility analytics
+
+Example session view:
+Session: session-9817
+├── Message received (msg-9817)
+├── Intent classified (tech_issue)
+├── SOP matched (tech-008)
+├── Action executed (reset_trackman)
+├── System confirmed (pc_online)
+└── Thread resolved (ai_resolved)
+
+[6.6] Real-Time Alerting Rules
+Monitor patterns across logs:
+{
+  "alert_rules": [
+    {
+      "name": "high_failure_rate",
+      "condition": "action_failures > 3 in 5_minutes",
+      "notify": ["#ops-alerts", "admin_ui"]
+    },
+    {
+      "name": "security_pattern",
+      "condition": "failed_unlocks > 5 in 1_hour",
+      "notify": ["#security", "owner"]
+    },
+    {
+      "name": "sop_failure_cluster",
+      "condition": "same_sop_failed > 5_times",
+      "notify": ["#ops-alerts"]
+    }
+  ]
+}
+
+[6.7] Log Query Interface
+Admin UI Logs tab features:
+* Search capabilities:
+  ○ Full-text search
+  ○ Regex patterns
+  ○ Structured queries
+* Filters:
+  ○ Time range (with presets)
+  ○ Log type
+  ○ Action/SOP
+  ○ Operator/Customer
+  ○ Location/Bay
+  ○ Outcome status
+* Export options:
+  ○ CSV download
+  ○ JSON export
+  ○ API endpoint for external tools
+
+[6.8] Performance & Privacy Optimization
+* Async logging pipeline:
+  ○ Non-blocking writes
+  ○ Batch inserts (every 100ms)
+  ○ Queue overflow protection
+* PII handling:
+  ○ Auto-redaction rules
+  ○ Anonymization for exports
+  ○ Customer deletion support
+* Optional sampling (future):
+  ○ Log 10% of FAQ responses
+  ○ Full logging for errors/escalations
+
+🎯 Expected Behavior
+* Full traceability of all decisions and actions via correlation IDs
+* Privacy-compliant logging with retention policies
+* Real-time alerts on concerning patterns
+* Claude doesn't see PII or untagged customer data
+* Any past decision, escalation, or edit can be audited
+* Logs are searchable and exportable for analysis
+* Performance impact minimal due to async pipeline
+
+proceed to Chunk 7: System Monitoring, Device Status, and Environment Triggers

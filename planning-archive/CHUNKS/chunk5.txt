@@ -1,0 +1,90 @@
+Claude Breakdown: Chunk 5 ? Knowledge Upload, Feedback Dashboard, and Learning Controls
+
+? Scope
+
+Define how operators add, modify, or validate new knowledge in ClubOS. Covers the Knowledge Upload interface, Claude-assisted SOP ingestion, tagging of high-quality interactions, and mechanisms for flagging or reinforcing learning.
+
+?? Cross-Referenced Corrections
+Early PlanFinal DecisionManual SOP updates only? AI-assisted upload + Claude categorizationNo tagging of message quality? Operators can ?star? high-quality interactionsLearning from all messages? Learning restricted to admin accounts + tagged threads
+?? Dependencies
+* Claude SOP parser tool (reads input ? structured format)
+* Feedback dashboard UI (in Admin panel)
+* Access to SOP DB and Message Log store
+* Role-based permission control
+
+?? Tasks
+
+[5.1] Knowledge Upload Flow
+
+Operators can:
+* Paste freeform rule logic (e.g. ?Refund allowed if >10min before session?)
+* Upload a document or SOP file
+* Select optional category and metadata
+
+Claude does:
+* Categorization
+* Conflict detection
+* Structure generation
+* Drafts sop.json format and sends to review queue
+
+UI presents:
+* Claude?s suggested SOP summary
+* Source (freeform / file / upload)
+* Auto-assigned category + fallback
+* Accept / Edit / Reject
+
+[5.2] Feedback Dashboard
+
+UI interface shows:
+* Auto-detected candidate rules (from message logs)
+* Flagged ambiguous threads
+* Duplicate SOPs
+* Pending Claude merges
+* History of all past updates (sortable/filterable)
+
+Operators can:
+* Approve Claude suggestions
+* Manually edit draft SOPs
+* Re-tag past logs
+* Archive old or unused logic
+
+[5.3] Tagging High-Quality Interactions
+
+Operators can mark:
+* Specific threads as ??? Use for future learning?
+* Individual replies as ?? Good phrasing?
+* Claude-proposed new rules as ??? Canonical?
+
+These create feedback signals:
+{
+  "type": "learning_signal",
+  "source": "message",
+  "by": "admin_mike",
+  "linked_sop": "booking-022",
+  "confidence_boost": 0.15
+}
+
+[5.4] Learning Access Controls
+* Only approved roles can create learning tags
+* Default: admin and supervisor accounts
+* Role config:
+{
+  "role": "tech",
+  "can_tag_learning": false,
+  "can_upload_knowledge": true
+}
+
+
+AI learns only from:
+* Approved tagged threads
+* Claude-reviewed logic
+* Operator-marked canonical flows
+
+? Expected Behavior
+* SOP ingestion is clean, human-guided, and structured
+* Claude acts as a logic processor ? not as an auto-updater
+* Operators curate what gets learned from and what doesn?t
+* Feedback dashboard is the central place for improving logic
+
+proceed to Chunk 6: Logging, Audit Trails, and Change History
+

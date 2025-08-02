@@ -1,0 +1,146 @@
+ClubOS V3 - Chunk 4: SOP Structure, Storage, and Update Workflow
+
+📍 Scope
+
+Define how ClubOS V3 stores, retrieves, and updates SOPs; how AI locates and applies them; and how Claude proposes updates, merges, or rewrites. Ensures all SOPs are modular, auditable, and human-approved.
+
+🔄 Cross-Referenced Corrections
+Early Plan                    → Final Decision
+Static SOP files             → SOPs stored as modular DB records with version history
+Claude updates directly      → Claude proposes changes – no live write without approval
+AI matches SOPs by pattern   → AI uses vector match + category confidence + context filtering
+No performance tracking      → Full metrics on usage, success rate, and timing
+Simple trigger matching      → Regex, semantic variants, and multi-language support
+
+📦 Dependencies
+* Claude with file parsing + structured JSON output
+* Supabase / Postgres for SOP record store
+* GPT-based vector search layer (e.g. Pinecone, pgvector, or native DB)
+* Claude SOP editor tool interface (used by admin/human)
+
+🔧 Tasks
+
+[4.1] Enhanced SOP Schema
+Each SOP stored in structured format:
+{
+  "sop_id": "tech-013",
+  "title": "TrackMan frozen mid-session",
+  "category": "tech",
+  "subcategory": "TrackMan",
+  "dependencies": ["tech-012"],  // Must complete these first
+  "prerequisites": ["booking_active", "bay_occupied"],
+  "trigger_patterns": {
+    "exact": ["screen stuck", "no ball tracking"],
+    "regex": ["track.*freez", "stuck.*screen"],
+    "semantic_variants": ["frozen display", "trackman not responding"],
+    "common_misspellings": ["trakman", "track man"]
+  },
+  "primary_action": "reset_trackman",
+  "fallback_action": "escalate",
+  "priority_weight": 0.9,
+  "mergeable": true,
+  "linked_logs": ["log-9031", "log-9121"],
+  "version": 3,
+  "last_updated_by": "mike",
+  "status": "active",
+  "context": {
+    "location": ["all"],  // or ["Dartmouth", "Bedford"]
+    "time_window": null,  // or "17:00-23:00"
+    "customer_flags_required": [],
+    "valid_until": null  // or "2025-12-31" for seasonal
+  },
+  "metrics": {
+    "success_rate": 0.87,
+    "avg_resolution_time": 45,
+    "times_used": 234,
+    "last_failed": "2025-07-30",
+    "last_success": "2025-07-31"
+  }
+}
+
+[4.2] Retrieval Logic with Context Filtering
+When AI classifies a message:
+* It queries the SOP vector store using:
+  ○ Message intent + keywords
+  ○ Category filter
+  ○ System state (e.g. booking present, bay active)
+  ○ Context requirements (location, time, customer flags)
+* Matching process:
+  1. Check exact trigger matches
+  2. Try regex patterns
+  3. Run semantic similarity search
+  4. Filter by context requirements
+  5. Check dependencies met
+* Returns only:
+  ○ Highest match (if confidence > threshold)
+  ○ Matches in correct category + location scope
+  ○ Active SOPs (not expired)
+
+[4.3] Claude Update Pipeline
+When a message or thread doesn't match any SOP:
+* Claude proposes a new SOP draft, or:
+  ○ Suggests merge of two existing rules
+  ○ Flags a rule as too vague / conflicting
+* Operator sees:
+  ○ Diff of change
+  ○ Thread(s) that triggered it
+  ○ Performance impact estimate
+  ○ Options: accept, edit, discard
+
+No changes made live without human confirmation.
+
+[4.4] Versioning + Rollbacks
+* Every change creates a version snapshot:
+  ○ version: 4, source: Claude, status: pending_review
+* Previous versions stored for:
+  ○ Rollback (manual trigger)
+  ○ Change log diffs
+  ○ Conflict resolution
+  ○ Performance comparison
+
+[4.5] Performance Tracking & Optimization
+* Automatic metric updates after each use:
+  ○ Increment times_used
+  ○ Update success_rate based on outcome
+  ○ Track resolution time
+  ○ Log last success/failure
+* Dashboard alerts when:
+  ○ Success rate drops below 70%
+  ○ SOP unused for 90+ days
+  ○ High failure cluster detected
+
+[4.6] Redundancy Handling + Merge Flow
+* Claude runs weekly similarity clustering across SOPs
+* Flags high-overlap pairs
+* Suggests one of:
+  ○ Merge → New rule summary combining both
+  ○ Re-tag one with subdomain (e.g. golf, pickleball)
+  ○ Archive lesser-used duplicate
+  ○ Add location-specific context
+
+[4.7] Future: SOP Testing Framework (V2)
+Schema supports but not implemented:
+{
+  "test_cases": [
+    {
+      "input": "TrackMan screen is frozen",
+      "expected_action": "reset_trackman",
+      "expected_confidence": 0.95
+    }
+  ],
+  "ab_test": {
+    "variant_a": "tech-013",
+    "variant_b": "tech-013-v4",
+    "split": 0.1  // 10% get new version
+  }
+}
+
+🎯 Expected Behavior
+* AI matches customer problems to clean, contextual SOPs with dependencies
+* All SOPs are structured, filterable, versioned, and human-verifiable
+* Performance metrics drive continuous improvement
+* Claude only proposes logic, never edits DB directly
+* Weekly SOP cleanup keeps knowledge store lean and aligned
+* Context requirements ensure SOPs only fire when appropriate
+
+proceed to Chunk 5: Knowledge Upload, Feedback Dashboard, and Learning Controls

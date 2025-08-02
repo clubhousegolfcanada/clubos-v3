@@ -1,0 +1,78 @@
+
+??ÿ
+Claude Breakdown: Chunk 2 ? Message Flow, Thread State, and Escalation Logic
+
+? Scope
+
+Define how ClubOS V2 handles incoming customer messages, classifies intent, routes to actions, and escalates if required. Establish internal thread state tracking and escalation decision logic.
+
+?? Cross-Referenced Corrections
+Early PlanFinal DecisionStatic message parsing? Message flow is live-classified + context-awareNo thread states? Threads are assigned status with intent + stateHuman-only escalation? AI escalates based on configured failure thresholds
+?? Dependencies
+* OperatorGPT must:
+o Receive message input
+o Access booking + system state (NinjaOne, DB)
+o Maintain message ? thread linkage
+* Escalation paths configured per category
+* Optional: Slack fallback for human escalation
+
+?? Tasks
+
+[2.1] Message Flow Routing
+* Incoming messages are processed in real time
+* Each message is classified by intent:
+{
+  "intent": "tech_issue",
+  "sub_intent": "trackman_freeze",
+  "confidence": 0.93
+}
+* 
+* Matched to SOPs via vector search or tag
+* Booking + bay context is attached
+
+[2.2] Define Thread Status Enum
+
+Every customer thread stores a live status:
+"awaiting_response" |
+"ai_resolved" |
+"escalated" |
+"in_progress" |
+"resolved" |
+"manual_override"
+LLM uses status + last action to decide next step.
+
+[2.3] Escalation Trigger Logic
+
+Escalation is triggered when:
+* autonomy = false for category
+* Or SOP fails (e.g. reset unsuccessful and no fallback allowed)
+* Or customer replies with negative sentiment (e.g. ?still not working?)
+* Or AI confidence falls below minimum threshold
+
+Escalation triggers:
+* Slack alert (if enabled)
+* Thread moves to "escalated"
+* Operator gets inline summary of what was attempted
+
+[2.4] AI Retry Behavior
+
+Controlled via per-action config:
+{
+  "category": "tech",
+  "max_fallbacks": 1,
+  "retry_delay": 2,
+  "await_customer_feedback": true
+}
+Retry logic always waits for:
+* Booking data
+* Customer reply
+* System status confirmation
+
+? Expected Behavior
+* Every customer message is routed through a thread with tracked status
+* AI attempts 1?2 known resolutions (if allowed), then escalates
+* Threads are not freeform chats ? they follow intent ? action ? feedback ? status
+* Operators can view thread state, actions taken, and escalation history
+
+proceed to Chunk 3: Action Execution, System State, and Outcome Logging.
+

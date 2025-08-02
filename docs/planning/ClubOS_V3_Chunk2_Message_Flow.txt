@@ -1,0 +1,127 @@
+ClubOS V3 - Chunk 2: Message Flow, Thread State, and Escalation Logic
+
+📍 Scope
+
+Define how ClubOS V3 handles incoming customer messages, classifies intent, routes to actions, and escalates if required. Establish internal thread state tracking, escalation decision logic, and message queue management.
+
+🔄 Cross-Referenced Corrections
+Early Plan                    → Final Decision
+Static message parsing        → Message flow is live-classified + context-aware
+No thread states             → Threads are assigned status with intent + state
+Human-only escalation        → AI escalates based on configured failure thresholds
+No queue management          → Priority queue with FIFO + emergency override
+
+📦 Dependencies
+* OperatorGPT must:
+  ○ Receive message input
+  ○ Access booking + system state (NinjaOne, DB)
+  ○ Maintain message → thread linkage
+  ○ Manage message queue
+* Escalation paths configured per category
+* Optional: Slack fallback for human escalation
+
+🔧 Tasks
+
+[2.1] Message Flow Routing & Classification
+* Incoming messages are processed in real time via priority queue
+* Each message is classified by intent using:
+  ○ Keyword matching (primary)
+  ○ Category tags from SOPs
+  ○ Semantic similarity (if confidence < threshold)
+  ○ Context from booking/location data
+* Classification output:
+{
+  "intent": "tech_issue",
+  "sub_intent": "trackman_freeze",
+  "confidence": 0.93,
+  "matched_sop": "tech-013",
+  "keywords_matched": ["frozen", "trackman", "stuck"]
+}
+* Matched to SOPs via vector search or tag
+* Booking + bay context is attached
+
+[2.2] Define Thread Status Enum (Enhanced)
+Every customer thread stores a live status:
+"pending" |              // Just received, not processed
+"awaiting_ai" |         // Being processed by AI
+"awaiting_response" |   // AI responded, waiting for customer
+"ai_resolved" |         // AI successfully handled
+"escalated" |           // Sent to human operator
+"in_progress" |         // Human working on it
+"resolved" |            // Human marked complete
+"manual_override" |     // Operator took control
+"timeout" |             // No resolution within time limit
+"merged"                // Duplicate merged with another thread
+
+LLM uses status + last action to decide next step.
+
+[2.3] Message Queue Management
+* Priority levels:
+  ○ EMERGENCY (keywords: "fire", "injury", "emergency")
+  ○ HIGH (active booking issues)
+  ○ NORMAL (general inquiries)
+  ○ LOW (feedback, suggestions)
+* Queue behavior:
+  ○ EMERGENCY jumps to front
+  ○ Otherwise FIFO within priority level
+  ○ Max queue size: 100 (configurable)
+  ○ Overflow triggers operator alert
+
+[2.4] Escalation Trigger Logic (Enhanced)
+Escalation is triggered when:
+* autonomy = false for category
+* SOP fails (e.g. reset unsuccessful and no fallback allowed)
+* Customer sentiment negative (detected patterns):
+  ○ "still not working"
+  ○ "this is ridiculous"
+  ○ "I want a refund"
+  ○ "let me speak to someone"
+  ○ Multiple "?" or "!" in succession
+* AI confidence falls below minimum threshold
+* Time-based triggers:
+  ○ No resolution within 15 minutes
+  ○ Customer waiting > 5 minutes for response
+  ○ Thread idle > 30 minutes
+
+Escalation triggers:
+* Slack alert (if enabled)
+* Thread moves to "escalated"
+* Operator gets inline summary of what was attempted
+* AI stops processing thread
+
+[2.5] AI Retry Behavior
+Controlled via per-action config:
+{
+  "category": "tech",
+  "max_fallbacks": 1,
+  "retry_delay": 2,
+  "await_customer_feedback": true,
+  "timeout_minutes": 15
+}
+Retry logic always waits for:
+* Booking data
+* Customer reply
+* System status confirmation
+* Timeout expiration
+
+[2.6] Thread Merge Logic
+* Duplicate detection:
+  ○ Same phone number + similar intent within 30 minutes
+  ○ Same location/bay + overlapping time
+* Merge behavior:
+  ○ Newer thread marked as "merged"
+  ○ Messages consolidated in primary thread
+  ○ Customer notified: "I see you messaged about this earlier..."
+  ○ All actions/logs linked to primary
+* Manual merge option for operators
+
+🎯 Expected Behavior
+* Every customer message is routed through a thread with tracked status
+* AI attempts 1-2 known resolutions (if allowed), then escalates
+* Threads are not freeform chats – they follow intent → action → feedback → status
+* Queue ensures high-priority issues handled first
+* Duplicate messages are intelligently merged
+* Time limits prevent threads from hanging indefinitely
+* Operators can view thread state, actions taken, and escalation history
+
+proceed to Chunk 3: Action Execution, System State, and Outcome Logging.

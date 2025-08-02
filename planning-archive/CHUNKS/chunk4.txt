@@ -1,0 +1,83 @@
+Claude Breakdown: Chunk 4 ? SOP Structure, Storage, and Update Workflow
+
+? Scope
+
+Define how ClubOS V2 stores, retrieves, and updates SOPs; how AI locates and applies them; and how Claude proposes updates, merges, or rewrites. Ensures all SOPs are modular, auditable, and human-approved.
+
+?? Cross-Referenced Corrections
+Early PlanFinal DecisionStatic SOP files? SOPs stored as modular DB records with version historyClaude updates directly? Claude proposes changes ? no live write without approvalAI matches SOPs by pattern? AI uses vector match + category confidence filtering
+?? Dependencies
+* Claude with file parsing + structured JSON output
+* Supabase / Postgres for SOP record store
+* GPT-based vector search layer (e.g. Pinecone, pgvector, or native DB)
+* Claude SOP editor tool interface (used by admin/human)
+
+?? Tasks
+
+[4.1] SOP Schema
+
+Each SOP stored in structured format:
+{
+  "sop_id": "tech-013",
+  "title": "TrackMan frozen mid-session",
+  "category": "tech",
+  "subcategory": "TrackMan",
+  "trigger_phrases": ["screen stuck", "no ball tracking"],
+  "primary_action": "reset_trackman",
+  "fallback_action": "escalate",
+  "priority_weight": 0.9,
+  "mergeable": true,
+  "linked_logs": ["log-9031", "log-9121"],
+  "version": 3,
+  "last_updated_by": "mike",
+  "status": "active"
+}
+
+[4.2] Retrieval Logic
+
+When AI classifies a message:
+* It queries the SOP vector store using:
+o Message intent
+o Category
+o System state (e.g. booking present, bay active)
+* Returns only:
+o Highest match (if confidence > threshold)
+o Matches in correct category + location scope
+
+[4.3] Claude Update Pipeline
+
+When a message or thread doesn?t match any SOP:
+* Claude proposes a new SOP draft, or:
+o Suggests merge of two existing rules
+o Flags a rule as too vague / conflicting
+* Operator sees:
+o Diff of change
+o Thread(s) that triggered it
+o Options: accept, edit, discard
+
+No changes made live without human confirmation.
+
+[4.4] Versioning + Rollbacks
+* Every change creates a version snapshot:
+o version: 4, source: Claude, status: pending_review
+* Previous versions stored for:
+o Rollback
+o Change log diffs
+o Conflict resolution
+
+[4.5] Redundancy Handling + Merge Flow
+* Claude runs weekly similarity clustering across SOPs
+* Flags high-overlap pairs
+* Suggests one of:
+o Merge ? New rule summary
+o Re-tag one with subdomain (e.g. golf, pickleball)
+o Archive lesser-used duplicate
+
+? Expected Behavior
+* AI matches customer problems to clean, single-source SOPs
+* All SOPs are structured, filterable, versioned, and human-verifiable
+* Claude only proposes logic, never edits DB directly
+* Weekly SOP cleanup keeps knowledge store lean and aligned
+
+Chunk 5: Knowledge Upload, Feedback Dashboard, and Learning Controls
+

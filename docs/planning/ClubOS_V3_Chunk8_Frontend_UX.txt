@@ -1,0 +1,174 @@
+ClubOS V3 - Chunk 8: Frontend Layout, Mobile UX, and Desktop Controls
+
+📍 Scope
+
+Define the UI structure for ClubOS V3 – prioritizing mobile-first message interaction, context-aware action panes, and a minimal desktop interface for admin oversight and SOP curation. Focused on efficiency, clarity, operator speed, and multi-location support.
+
+🔄 Cross-Referenced Corrections
+Early Plan                    → Final Decision
+Dashboard-first UI           → Messaging is the homepage – dashboard is secondary
+Separate UI per LLM          → Single LLM interface – logic visible per message thread
+No action controls defined   → Context-aware swipe-up action panel (mobile) or sidebar (web)
+All users shared view        → Role-scoped visibility and controls per user
+No dark mode                 → System-aware dark mode with manual toggle
+No performance optimization  → Virtualized lists and lazy loading
+
+📦 Dependencies
+* Next.js 14 frontend deployed on Vercel
+* Tailwind CSS UI framework with dark mode support
+* React state for UI tab management + operator-specific state
+* Virtualized list library (react-window or similar)
+* Accessibility compliance (WCAG 2.1)
+
+🔧 Tasks
+
+[8.1] Mobile-First Layout with Performance
+* Default view = Message Inbox
+  ○ Virtualized list for performance
+  ○ Chronological with priority override
+  ○ Badges: "Escalated", "In Progress", "Resolved"
+  ○ Each entry includes:
+    - Customer name / phone
+    - Location + bay (if booking found)
+    - Status icon with color coding
+    - Last message preview (truncated)
+    - Time since last activity
+
+[8.2] Thread View with Accessibility (Mobile)
+* Header:
+  ○ Booking info (time, bay, location)
+  ○ Thread status (ai_resolved, escalated, etc.)
+  ○ Quick location switcher if multi-site
+* Main area:
+  ○ Message log (left: customer, right: AI/human)
+  ○ AI suggestions appear as ghost replies or buttons
+  ○ Lazy load older messages on scroll
+* Bottom:
+  ○ Swipe-up Action Panel with dynamic buttons:
+    - Reset TrackMan
+    - Unlock door
+    - Escalate to Slack
+    - View linked SOP
+    - Confirm refund
+  ○ Alternative: Long-press for action menu
+  ○ Accessibility mode: Always show buttons
+
+[8.3] Desktop View with Multi-Location (Admin + Ops)
+* Split-pane layout:
+  ○ Left: thread list (virtualized)
+  ○ Center: selected message + actions
+  ○ Right: optional live context panel (status, actions taken, logs)
+* Header:
+  ○ Location switcher dropdown
+  ○ "All Locations" overview option
+  ○ Dark mode toggle
+* Tab system:
+  ○ Messages (default)
+  ○ Escalations
+  ○ Knowledge
+  ○ Logs
+  ○ Settings
+  ○ Multi-Location Dashboard (if applicable)
+* Claude summaries / SOP merge prompts shown as sidebar modals
+
+[8.4] Role-Based View Control with Dark Mode
+* UI components rendered conditionally based on role:
+  ○ Operators see message + action panel
+  ○ Admins see all tabs, including SOP tools
+  ○ Tech sees system panel but not booking info
+* Role config:
+{
+  "role": "operator",
+  "visible_tabs": ["Messages", "Escalations"],
+  "action_permissions": ["reset", "unlock"],
+  "locations": ["Bedford", "Dartmouth"],
+  "theme_preference": "dark"
+}
+
+Dark mode implementation:
+* CSS variables for color tokens
+* Tailwind dark: prefix classes
+* Respects system preference by default
+* Manual toggle saved to user settings
+
+[8.5] Live Thread Summary & LLM Transparency
+Every thread shows:
+* Actions AI took with timestamps
+* SOP used with link to view
+* Claude comments (if triggered)
+* "View Reasoning" toggle for transparency
+* Performance metrics (resolution time)
+
+Prevents trust breakdown by surfacing logic chain when needed
+
+[8.6] Quick Actions & Keyboard Shortcuts
+Desktop shortcuts for common actions:
+{
+  "quick_actions": [
+    {"key": "cmd+r", "action": "reset_trackman"},
+    {"key": "cmd+u", "action": "unlock_door"},
+    {"key": "cmd+e", "action": "escalate"},
+    {"key": "cmd+k", "action": "open_knowledge"},
+    {"key": "cmd+/", "action": "search_threads"},
+    {"key": "cmd+l", "action": "switch_location"}
+  ]
+}
+
+Mobile equivalents:
+* Haptic feedback on swipe actions
+* Quick action bar for frequent tasks
+* Voice commands (future consideration)
+
+[8.7] Multi-Location Dashboard
+For operators managing multiple sites:
+* Overview cards per location:
+  ○ Active threads count
+  ○ System status summary
+  ○ Revenue at risk
+  ○ Recent escalations
+* Cross-location views:
+  ○ All active escalations
+  ○ System outages map
+  ○ Comparative metrics
+* Quick filters:
+  ○ By location
+  ○ By urgency
+  ○ By operator assigned
+
+[8.8] Performance Optimizations
+* Virtual scrolling:
+  ○ Only render visible messages
+  ○ Buffer of 10 items above/below
+* Lazy loading:
+  ○ Thread details on demand
+  ○ Historical messages paginated
+* Image optimization:
+  ○ Compress uploads client-side
+  ○ Thumbnail generation
+  ○ Progressive loading
+* Bundle optimization:
+  ○ Route-based code splitting
+  ○ Tree shaking unused components
+
+[8.9] Future: Offline Support (V2.1)
+Schema prepared for:
+{
+  "offline_capabilities": {
+    "cache_recent_threads": 50,
+    "queue_actions": true,
+    "sync_on_reconnect": true,
+    "conflict_resolution": "server_wins"
+  }
+}
+
+🎯 Expected Behavior
+* Mobile interface is fast, focused, and swipe-action based
+* Desktop interface supports oversight, multi-location management
+* Dark mode reduces eye strain for night operators
+* Accessibility ensures all operators can use the system
+* Performance remains snappy even with hundreds of threads
+* Operators know what AI is doing, when, and why
+* Multi-location operators have unified control
+* Claude suggestions appear cleanly in knowledge dashboard tab
+
+proceed to Chunk 9: Notification Routing, Slack Escalation, and Role-Based Alerting

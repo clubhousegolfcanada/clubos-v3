@@ -1,0 +1,189 @@
+ClubOS V3 - Chunk 7: System Monitoring, Device Status, and Environment Triggers
+
+📍 Scope
+
+Define how ClubOS V3 integrates with systems like NinjaOne and Ubiquiti to monitor real-time device health, booking-related activity, and passive anomalies. Covers proactive flags, AI alerts, maintenance windows, and human-aware triggers (e.g. no-shows, location offline).
+
+🔄 Cross-Referenced Corrections
+Early Plan                    → Final Decision
+No proactive AI monitoring    → AI monitors device + location state but does not act autonomously
+NinjaOne mentioned undefined  → NinjaOne used for PC uptime + service state tracking
+No booking dropout logic      → Booking no-shows flagged to operator, not resolved by AI
+No health check intervals     → Configurable intervals per device type
+No impact assessment          → Revenue and customer impact calculated
+
+📦 Dependencies
+* NinjaOne API access (PC online status, uptime, reset options)
+* Ubiquiti access logs (door opened, customer connected)
+* Booking data sync (from Skedda or Jason's custom system)
+* Health check scheduler
+* Maintenance window configuration
+
+🔧 Tasks
+
+[7.1] Device Status Polling with Configurable Intervals
+Each location's core systems are tracked with specific health check parameters:
+
+Device configurations:
+{
+  "trackman_pc": {
+    "check_interval": "30s",
+    "timeout": "5s", 
+    "retry_count": 3,
+    "alert_after_failures": 2,
+    "check_method": "ninjaone_api"
+  },
+  "door_controller": {
+    "check_interval": "60s",
+    "timeout": "3s",
+    "retry_count": 2,
+    "alert_after_failures": 3,
+    "check_method": "ubiquiti_api"
+  },
+  "network_connectivity": {
+    "check_interval": "15s",
+    "timeout": "2s",
+    "retry_count": 1,
+    "alert_after_failures": 1,
+    "check_method": "ping"
+  }
+}
+
+Track status:
+{
+  "location": "Dartmouth",
+  "bay": "4",
+  "pc_online": false,
+  "last_successful_check": "2025-08-01T14:03:00Z",
+  "consecutive_failures": 3,
+  "booking_active": true,
+  "auto_flag": true,
+  "flag_type": "device_offline_during_booking",
+  "status": "unresponsive" | "online" | "unknown" | "maintenance"
+}
+
+[7.2] Booking No-Show Detection with Impact
+If booking ends, and:
+* No access log (door_unlocked = false)
+* No AI interaction or system usage
+→ Thread is tagged as "booking_no_show"
+
+Flag includes impact assessment:
+{
+  "type": "booking_no_show",
+  "booking_id": "bk-3921",
+  "revenue_lost": 75,
+  "customer_history": "first_time" | "repeat" | "vip",
+  "suggested_action": "follow_up_message"
+}
+
+Surfaced to:
+* Operator dashboard with priority
+* Optional Slack notification
+* Options: log refund, message customer, mark complete
+
+[7.3] Location-Wide Offline Detection with Dependencies
+If multiple systems fail in cascade pattern:
+* AI flags as potential infrastructure issue:
+  ○ potential_power_loss: All devices offline within 2 min
+  ○ network_outage: API timeouts + no customer connections
+  ○ partial_failure: Some bays affected, others operational
+
+Alert includes grouped impact:
+{
+  "alert_type": "location_power_loss",
+  "affected_systems": ["bay_1_pc", "bay_2_pc", "door_controller"],
+  "time_window": "2_minutes",
+  "impact": {
+    "active_bookings": 3,
+    "upcoming_bookings": 8,
+    "revenue_at_risk": 600,
+    "suggested_cause": "Power outage or network switch failure"
+  }
+}
+
+[7.4] Maintenance Window Management
+Operators can define maintenance windows:
+{
+  "maintenance_id": "maint-2910",
+  "location": "Bedford",
+  "systems": ["all"] | ["bay_1", "bay_2"],
+  "start_time": "2025-08-02T02:00:00Z",
+  "end_time": "2025-08-02T04:00:00Z",
+  "reason": "TrackMan software update",
+  "created_by": "mike",
+  "suppress_alerts": true
+}
+
+During maintenance:
+* Health checks continue but don't trigger alerts
+* Status shows "maintenance" instead of "offline"
+* Customer messages get auto-reply about maintenance
+* All events still logged for review
+
+[7.5] Passive Monitoring Triggers with Patterns
+System watches for soft anomalies like:
+* Multiple failed TrackMan resets within window
+* Recurring "no booking found" at specific bay
+* High escalation rate from single customer
+* Repeated failures at same time daily
+
+Pattern detection:
+{
+  "pattern_type": "recurring_failure",
+  "description": "Bay 3 TrackMan fails every day at 6PM",
+  "occurrences": 5,
+  "confidence": 0.85,
+  "suggested_investigation": "Check scheduled tasks or thermal issues"
+}
+
+Claude proposes:
+* Review SOP tech-010 for edge cases
+* Flag for preventive maintenance
+* Create time-based rule
+
+[7.6] Alert Grouping with Business Impact
+* Alerts from same location within X minutes are grouped
+* Claude deduplicates recurring errors
+* Thresholds per alert type:
+{
+  "device_offline_timeout": 3,
+  "group_similar_alerts": true,
+  "include_revenue_impact": true,
+  "priority_by_bookings": true
+}
+
+Alert priority factors:
+1. Active customer present
+2. Revenue at risk
+3. VIP customer affected
+4. Multiple bays impacted
+
+[7.7] Integration Redundancy Planning
+Fallback strategies when primary monitoring fails:
+* NinjaOne offline → Use cached state (max 5 min old)
+* Show status as "unknown" vs "offline" when unconfirmed
+* Future: Local heartbeat agent as backup
+* Future: Multiple data sources for critical systems
+
+[7.8] Future: Predictive Monitoring (V2)
+Schema supports but not implemented:
+{
+  "predictive_metrics": {
+    "cpu_trend": "increasing",
+    "disk_space_days_remaining": 45,
+    "reset_frequency_trend": "worsening",
+    "mtbf_estimate": "72_hours"
+  }
+}
+
+🎯 Expected Behavior
+* AI never acts on system data alone – it flags and suggests only
+* All device state changes tracked with customer impact assessment
+* Operators get high-signal alerts grouped by impact and root cause
+* Maintenance windows prevent false alerts
+* Revenue and customer priority drive alert ordering
+* Claude builds passive pattern awareness to evolve logic over time
+* System degrades gracefully when monitoring APIs fail
+
+proceed to Chunk 8: Frontend Layout, Mobile UX, and Desktop Controls

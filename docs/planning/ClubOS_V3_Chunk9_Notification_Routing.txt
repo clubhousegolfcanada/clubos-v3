@@ -1,0 +1,216 @@
+ClubOS V3 - Chunk 9: Notification Routing, Slack Escalation, and Role-Based Alerting
+
+📍 Scope
+
+Define how ClubOS V3 handles notifications, including Slack escalations, high-priority message routing, and per-operator alert controls. Ensures signal is scoped, timely, and role-relevant – preventing alert fatigue and enabling response clarity with SLA tracking.
+
+🔄 Cross-Referenced Corrections
+Early Plan                    → Final Decision
+All escalations sent manually → AI triggers Slack escalation automatically, based on rules
+Single Slack feed            → Per-role or per-user Slack channel assignment
+All users notified equally   → Notification scope defined by operator role and location group
+No acknowledgment system     → Interactive Slack with ack buttons and response tracking
+Basic Slack integration      → Two-way sync with action buttons
+
+📦 Dependencies
+* Slack App + Webhook integration with interactive components
+* Notification logic layer in backend (role-aware)
+* Thread metadata + escalation reason included in payload
+* SLA tracking and acknowledgment system
+* Optional: SMS/Email gateway for critical alerts
+
+🔧 Tasks
+
+[9.1] Escalation Trigger Routing with Priority Levels
+AI triggers Slack notification when:
+* Action fails (e.g. reset did not resolve issue)
+* Confidence score below configured threshold
+* Message tagged as human_required
+* System anomaly detected (e.g. all PCs offline at once)
+* Time-based SLA breach
+
+Priority levels and SLAs:
+{
+  "priority_levels": {
+    "critical": {
+      "sla_minutes": 5,
+      "color": "red",
+      "channels": ["slack", "sms"],
+      "re_alert_interval": 5
+    },
+    "high": {
+      "sla_minutes": 30,
+      "color": "orange",
+      "channels": ["slack"],
+      "re_alert_interval": 15
+    },
+    "medium": {
+      "sla_minutes": 120,
+      "color": "yellow",
+      "channels": ["slack"],
+      "re_alert_interval": 60
+    },
+    "low": {
+      "sla_minutes": 1440,
+      "color": "gray",
+      "channels": ["email"],
+      "re_alert_interval": null
+    }
+  }
+}
+
+Slack message format:
+{
+  "channel": "#mike-alerts",
+  "priority": "high",
+  "text": "🟠 HIGH: Bay 2 TrackMan not responding after reset",
+  "thread_id": "msg-9123",
+  "location": "Bedford",
+  "customer": "John D.",
+  "trigger": "AI reset failed",
+  "link": "https://clubos.app/thread/msg-9123",
+  "actions": ["acknowledge", "retry", "escalate"],
+  "sla_deadline": "4:45 PM"
+}
+
+[9.2] Role-Scoped Slack Channels with Location Filtering
+Each operator or group is subscribed to relevant alerts only:
+{
+  "user": "mike",
+  "location_scope": ["Bedford", "Dartmouth"],
+  "alert_types": ["tech", "access", "emergency"],
+  "channel": "#mike-alerts",
+  "backup_channel": "#ops-general"
+}
+
+Keeps irrelevant threads out of inbox and aligns to operator ownership
+
+[9.3] Escalation Chain Configuration
+Define fallback sequences for unacknowledged alerts:
+{
+  "escalation_chains": {
+    "tech_issues": {
+      "primary": "mike",
+      "fallback_after_minutes": 10,
+      "chain": ["sarah", "john", "oncall_rotation"],
+      "final_fallback": "#emergency-channel"
+    },
+    "booking_issues": {
+      "primary": "sarah",
+      "fallback_after_minutes": 15,
+      "chain": ["mike", "owner"]
+    }
+  }
+}
+
+If primary doesn't acknowledge within timeout:
+* Alert re-routes to next in chain
+* Original recipient notified of handoff
+* Escalation logged with timestamps
+
+[9.4] Interactive Slack Components
+Slack alerts include action buttons:
+```
+[🔔 Acknowledge] [🔁 Retry Action] [🚨 Escalate Further] [✅ Mark Resolved]
+```
+
+Button actions:
+* Acknowledge: Logs timestamp, stops re-alerts
+* Retry: Triggers action from Slack
+* Escalate: Moves to next in chain immediately
+* Resolve: Updates thread status, logs resolution
+
+Response tracking:
+{
+  "alert_id": "alert-2910",
+  "sent_at": "2025-08-01T16:15:00Z",
+  "acknowledged_at": "2025-08-01T16:21:00Z",
+  "acknowledged_by": "mike",
+  "response_time_minutes": 6,
+  "action_taken": "retry",
+  "resolved_at": "2025-08-01T16:25:00Z"
+}
+
+[9.5] Multi-Channel Alert Preferences
+Operators configure channel preferences:
+{
+  "alert_preferences": {
+    "critical": ["slack", "sms"],
+    "high": ["slack"],
+    "medium": ["slack", "email_digest"],
+    "low": ["email_digest"],
+    "quiet_hours": {
+      "start": "22:00",
+      "end": "08:00",
+      "override_for": ["critical"]
+    }
+  }
+}
+
+Channel integrations:
+* Slack: Real-time with buttons
+* Email: Batched digests or immediate
+* SMS: Critical only via Twilio/similar
+* Push: Future PWA support
+* Phone: Webhook to calling service (optional)
+
+[9.6] AI + Slack Interplay with Two-Way Sync
+When AI escalates to Slack:
+* It pauses thread processing
+* Thread status set to "escalated"
+* Slack alert includes:
+  ○ Summary of actions attempted
+  ○ Proposed next steps
+  ○ Customer wait time
+  ○ Interactive buttons
+
+When operator responds in Slack:
+* Action logged in ClubOS
+* Thread status updated
+* Customer notified if applicable
+* AI resumes if operator requests
+
+[9.7] Daily Summary / Digest
+Optional daily/weekly digests:
+{
+  "digest_config": {
+    "frequency": "daily",
+    "time": "09:00",
+    "include": [
+      "unresolved_escalations",
+      "high_signal_failures", 
+      "sop_usage_stats",
+      "response_time_averages"
+    ],
+    "channels": ["#daily-clubhouse-digest", "ops@clubhouse.com"]
+  }
+}
+
+[9.8] On-Call Rotation (Optional)
+For 24/7 or multi-site operations:
+{
+  "oncall_schedule": {
+    "type": "weekly",
+    "rotation": ["mike", "sarah", "john"],
+    "handoff_day": "monday",
+    "handoff_time": "09:00",
+    "override": {
+      "date": "2025-08-15",
+      "operator": "backup_team",
+      "reason": "vacation"
+    }
+  }
+}
+
+System automatically routes to on-call operator when configured.
+
+🎯 Expected Behavior
+* Only the right people are alerted, at the right time, via right channel
+* Slack alerts are interactive with acknowledgment tracking
+* SLAs ensure timely response with automatic escalation
+* Escalated threads pause AI activity until human responds
+* Response times tracked for performance metrics
+* Multi-channel support ensures critical alerts get through
+* Claude learns only from resolved + tagged escalations
+
+proceed to Chunk 10: Learning Governance, Category Merging, and SOP Evolution

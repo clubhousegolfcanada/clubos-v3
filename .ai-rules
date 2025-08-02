@@ -1,0 +1,38 @@
+# AI Execution Rules (Highest Leverage)
+
+## 1. Quick Context (30 seconds)
+```bash
+cat CURRENT_WORK.md              # Active work
+grep "HANDOFF" CURRENT_WORK.md  # Previous session
+```
+If needed: `cat CLAUDE_MASTER_CONTEXT.md`
+
+## 2. Copy First, Create Second
+- Find similar code FIRST
+- Copy and modify
+- Only create new if nothing similar exists
+
+## 3. Ship Working Code
+- Working > Perfect
+- Patterns > Creativity
+- Done > Discussing
+
+## 4. Update Context
+- Category CHANGELOG.md after changes
+- CURRENT_WORK.md during work
+- Leave breadcrumbs
+
+## 5. No Overthinking
+- 10 min rule: Start coding
+- Use existing patterns
+- npm install solutions
+
+## 6. Be Practical
+- Build what users actually ask for
+- Implement improvements when pain is felt
+- Use feature flags for optional complexity
+- Every rule can be broken for good reason
+- Focus on shipping value, not following rules
+
+---
+*This file is for AI. Keep it visible.*

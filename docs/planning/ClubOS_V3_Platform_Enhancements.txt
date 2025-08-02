@@ -1,0 +1,306 @@
+ClubOS V3 - Platform-Level Enhancements: System-Wide Infrastructure
+
+📍 Scope
+
+This document addresses platform-level concerns across performance, security, testing, cost control, and multi-tenancy that complement the 11 core chunks. These enhancements ensure ClubOS V3 is not only operational, but robust, secure, and scalable.
+
+🔄 Platform Requirements
+These infrastructure elements span across all chunks and must be implemented at the system level to support the core functionality.
+
+📦 Dependencies
+* Redis or in-memory cache
+* TLS certificates
+* Monitoring infrastructure (Sentry, DataDog, or similar)
+* Testing framework (Jest, Playwright)
+* Cost tracking APIs
+
+🔧 Platform Enhancements
+
+[P.1] Performance & Scalability Infrastructure
+
+Caching Strategy:
+{
+  "cache_config": {
+    "provider": "redis",
+    "default_ttl": 60,
+    "cache_keys": {
+      "booking_lookup": "booking:{booking_id}",
+      "sop_match": "sop:{category}:{intent_hash}",
+      "location_status": "status:{location}:{bay}",
+      "operator_session": "session:{operator_id}"
+    }
+  }
+}
+
+Benefits:
+* Reduce database load by 70%+
+* Sub-100ms response for cached queries
+* Graceful degradation if cache fails
+
+Rate Limiting Layers:
+1. Global: 1000 requests/minute per instance
+2. Per-operator: 100 requests/minute
+3. Per-thread: 1 action/15 seconds
+4. Per-action cooldowns (defined in chunks)
+
+Database Optimization:
+-- Required indexes
+CREATE INDEX idx_message_thread ON message_log(thread_id);
+CREATE INDEX idx_sop_category ON sops(category, status);
+CREATE INDEX idx_action_booking ON action_log(booking_id, timestamp);
+CREATE INDEX idx_ticket_priority ON tickets(status, priority, location);
+CREATE INDEX idx_correlation ON all_logs(correlation_id);
+
+-- Partitioning for scale (future)
+-- Partition message_log by week
+-- Partition action_log by location
+
+Load Balancing Preparation:
+{
+  "scaling_ready": {
+    "stateless_api": true,
+    "session_in_redis": true,
+    "queue_based_llm": true,
+    "horizontal_pod_autoscaling": true
+  }
+}
+
+[P.2] Security & Privacy Infrastructure
+
+Encryption Standards:
+* Data at rest: AES-256-GCM
+* Data in transit: TLS 1.3 preferred, 1.2 minimum
+* Database field encryption for PII
+* Key rotation: Quarterly
+
+Authentication & Authorization:
+{
+  "auth_config": {
+    "methods": ["password", "oauth", "otp"],
+    "password_requirements": {
+      "min_length": 12,
+      "require_special": true,
+      "require_numbers": true,
+      "max_age_days": 90
+    },
+    "session_timeout": "8_hours",
+    "mfa_required_roles": ["admin", "owner"]
+  }
+}
+
+GDPR & Privacy Compliance:
+{
+  "privacy_features": {
+    "right_to_deletion": true,
+    "data_export": true,
+    "consent_tracking": true,
+    "pii_redaction": {
+      "fields": ["phone", "email", "name"],
+      "method": "hash_or_mask"
+    },
+    "retention_policy": {
+      "messages": "2_years",
+      "logs": "7_years",
+      "pii": "delete_after_2_years"
+    }
+  }
+}
+
+API Key Management:
+{
+  "api_keys": {
+    "storage": "encrypted_env_vars",
+    "rotation_schedule": "quarterly",
+    "scoped_permissions": true,
+    "audit_trail": true,
+    "services": {
+      "openai": {"scope": "completions"},
+      "claude": {"scope": "messages"},
+      "ninjaone": {"scope": "read_status"},
+      "openphone": {"scope": "send_messages"}
+    }
+  }
+}
+
+[P.3] Testing, QA, and Release Workflow
+
+Testing Framework:
+{
+  "test_strategy": {
+    "unit_tests": {
+      "coverage_target": "80%",
+      "framework": "jest"
+    },
+    "integration_tests": {
+      "api_endpoints": "100%",
+      "framework": "supertest"
+    },
+    "e2e_tests": {
+      "critical_paths": ["login", "message", "action", "escalate"],
+      "framework": "playwright"
+    },
+    "sop_tests": {
+      "test_cases_per_sop": 3,
+      "shadow_mode_duration": "48_hours"
+    }
+  }
+}
+
+Staging Environment:
+{
+  "environments": {
+    "development": {
+      "url": "dev.clubos.app",
+      "data": "synthetic",
+      "llm": "gpt-3.5-turbo"
+    },
+    "staging": {
+      "url": "staging.clubos.app",
+      "data": "anonymized_production",
+      "llm": "gpt-4"
+    },
+    "production": {
+      "url": "app.clubos.app",
+      "data": "live",
+      "llm": "gpt-4o"
+    }
+  }
+}
+
+Rollback Procedures:
+* Database migrations: Down scripts for every Up
+* SOP versions: One-click rollback with reason
+* Deployments: Blue-green with instant switch
+* Feature flags: Kill switches for major features
+
+Performance Benchmarks:
+{
+  "sla_targets": {
+    "llm_response": "< 2.5s p95",
+    "health_check": "< 1s p99",
+    "message_processing": "< 500ms p95",
+    "ui_load": "< 1s p90",
+    "action_execution": "< 5s p95"
+  }
+}
+
+[P.4] Cost Management & Usage Governance
+
+Token & Cost Controls:
+{
+  "cost_controls": {
+    "per_request_token_limit": 500,
+    "daily_token_budget": 100000,
+    "monthly_cost_cap": 5000,
+    "model_routing": {
+      "simple_queries": "gpt-3.5-turbo",
+      "complex_queries": "gpt-4o",
+      "claude_usage": "learning_only"
+    }
+  }
+}
+
+Usage Monitoring:
+{
+  "metrics_dashboard": {
+    "llm_requests_per_day": true,
+    "avg_tokens_per_request": true,
+    "cost_per_location": true,
+    "cost_per_resolution": true,
+    "operator_time_saved": true,
+    "automation_percentage": true
+  }
+}
+
+Alerts & Quotas:
+* 80% quota warning
+* 95% quota critical alert
+* Auto-throttle at 100%
+* Grace period for critical operations
+
+ROI Tracking:
+{
+  "roi_metrics": {
+    "avg_resolution_time": {
+      "before_ai": "15_minutes",
+      "with_ai": "3_minutes",
+      "time_saved": "12_minutes"
+    },
+    "cost_per_resolution": {
+      "operator_cost": 8.75,
+      "ai_cost": 0.12,
+      "savings": 8.63
+    }
+  }
+}
+
+[P.5] Multi-Tenancy and Location Scaling
+
+Data Isolation Architecture:
+{
+  "tenant_isolation": {
+    "database_schema": "schema_per_tenant",
+    "api_namespace": "/api/v1/{tenant_id}/",
+    "cache_keys": "{tenant}:{key}",
+    "log_partition": "by_tenant_and_week"
+  }
+}
+
+Cross-Location Features:
+* Unified dashboard with location filter
+* Aggregated metrics and alerts
+* Shared SOP library with location overrides
+* Cross-location ticket visibility
+
+Knowledge Scoping:
+{
+  "knowledge_scope": {
+    "global_sops": ["emergency", "brand"],
+    "location_sops": ["access", "facility"],
+    "bay_specific": ["equipment_quirks"],
+    "inheritance": "location_overrides_global"
+  }
+}
+
+Scaling Strategy:
+* Vertical: Up to 10 locations per instance
+* Horizontal: Dedicated instance per region
+* Future: Kubernetes multi-tenant with namespace isolation
+
+[P.6] Monitoring & Observability
+
+Logging Infrastructure:
+{
+  "observability": {
+    "structured_logs": true,
+    "correlation_ids": true,
+    "log_aggregation": "elasticsearch",
+    "metrics": "prometheus",
+    "traces": "jaeger",
+    "errors": "sentry"
+  }
+}
+
+Key Metrics:
+* System health by location
+* LLM performance (latency, errors)
+* SOP effectiveness
+* Operator response times
+* Cost per location/day
+
+Alerting Rules:
+* Error rate > 5% → PagerDuty
+* LLM timeout > 10/hour → Slack
+* Database connection lost → SMS
+* SLA breach → Dashboard + Email
+
+🎯 Expected Platform Behavior
+* System scales smoothly from 1 to 100 locations
+* Performance remains consistent under load
+* Security meets enterprise standards
+* Costs are predictable and controlled
+* Testing ensures reliability
+* Multi-tenancy maintains complete isolation
+* Platform issues are detected and resolved quickly
+
+This platform infrastructure enables ClubOS V3 to operate at production scale while maintaining the human-first, gradually-autonomous philosophy defined in the core chunks.

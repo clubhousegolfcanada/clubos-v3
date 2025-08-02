@@ -1,0 +1,137 @@
+ClubOS V3 - Chunk 3: Action Execution, System State, and Outcome Logging
+
+📍 Scope
+
+Define how ClubOS executes system actions (e.g. reset TrackMan, unlock door), how it confirms outcomes via system APIs (NinjaOne, Ubiquiti, etc.), and how all results are logged and scored for audit and learning.
+
+🔄 Cross-Referenced Corrections
+Early Plan                    → Final Decision
+Retry/reset logic was linear  → Retry logic is governed by config per category
+Rollback support discussed    → No AI rollback – compensating actions only, manual trigger
+Logs were unstructured       → Outcome logs are fully structured + versioned
+No prerequisites checking    → Formal prerequisites validation before actions
+Binary success/failure       → Partial success states supported
+
+📦 Dependencies
+* System API access:
+  ○ NinjaOne: PC status, uptime, remote reset
+  ○ Ubiquiti: door logs, connection attempts
+  ○ TrackMan: local ping or shell tool (custom handler)
+* OpenPhone: message confirmations
+* Audit logging DB
+
+🔧 Tasks
+
+[3.1] Action Execution Wrapper with Prerequisites
+All AI-triggered actions run through a central function:
+performAction({
+  action: "reset_trackman",
+  target: "bay_3",
+  triggered_by: "OperatorGPT",
+  reason: "trackman_freeze_sop_12",
+  booking_id: "bk-390128",
+  prerequisites: ["booking_active", "bay_occupied", "within_time_window"]
+})
+
+* Validates prerequisites before execution:
+  ○ booking_active: Current booking exists
+  ○ customer_at_location: Access log shows entry
+  ○ within_time_window: Within booking time +/- 10 min
+  ○ no_recent_action: Not within cooldown period
+* Calls associated tool/API
+* Waits for system confirmation (e.g. PC online, logs cleared)
+* Timeout if no state change in X seconds (action-specific)
+* Sets action_status: success | partial_success | success_unconfirmed | failed | timeout
+
+[3.2] Action Timeout Configuration
+Each action type has specific timeouts:
+{
+  "reset_trackman": {
+    "timeout_seconds": 30,
+    "prerequisites": ["booking_active", "bay_occupied"],
+    "cooldown_minutes": 30
+  },
+  "unlock_door": {
+    "timeout_seconds": 5,
+    "prerequisites": ["booking_active", "within_time_window"],
+    "max_per_booking": 2
+  },
+  "system_reboot": {
+    "timeout_seconds": 120,
+    "prerequisites": ["booking_active", "escalation_approved"],
+    "require_confirmation": true
+  }
+}
+
+[3.3] Structured Outcome Logging with Enhanced States
+Every action creates an entry:
+{
+  "action": "reset_trackman",
+  "bay": "3",
+  "location": "Bedford",
+  "result": "partial_success",
+  "details": "PC reset successful, TrackMan service unresponsive",
+  "followed_sop": "trackman_freeze_sop_12",
+  "trigger_source": "OperatorGPT",
+  "human_override": false,
+  "linked_thread": "msg_812",
+  "timestamp": "2025-07-31T18:35:20Z",
+  "duration_seconds": 28,
+  "prerequisites_met": true,
+  "compensating_action": "escalate_to_tech"
+}
+
+Result states:
+* success: Action completed and verified
+* partial_success: Some components worked, others didn't
+* success_unconfirmed: Action executed but can't verify outcome
+* failed: Action definitely failed
+* timeout: No response within time limit
+
+[3.4] Rate Limiting Integration
+Before executing, check rate limits:
+* Per-bay limits (e.g., 2 resets/hour)
+* Per-category limits
+* Per-booking limits
+If limit exceeded:
+* Log rate_limit_exceeded
+* Return message: "TrackMan reset limit reached for Bay 2 (2/hr). Escalating."
+* Auto-escalate to human
+
+[3.5] Compensating Actions (Manual Only)
+Track potential compensating actions:
+{
+  "action": "unlock_door",
+  "compensate_if_flagged": "lock_door",
+  "compensation_window": 300
+}
+
+If operator flags incorrect action:
+* System suggests compensating action
+* Operator confirms/executes
+* Both actions linked in audit log
+
+[3.6] Future: Action Chain Support (V2)
+Prepare for batched actions:
+{
+  "action_chain": "full_reset",
+  "steps": [
+    {"action": "reset_pc", "timeout": 30},
+    {"action": "clear_cache", "timeout": 10},
+    {"action": "restart_trackman", "timeout": 45}
+  ],
+  "on_failure": "rollback_completed_steps",
+  "require_all_success": true
+}
+Not implemented in V1, but schema supports it.
+
+🎯 Expected Behavior
+* All actions pass through prerequisite validation
+* System state is always checked post-action with proper timeouts
+* Results capture partial states and uncertainties
+* Rate limiting prevents action spam
+* Operator has full visibility into what was attempted and why
+* Compensating actions available but never automatic
+* Claude can later suggest SOP improvements based on outcome history
+
+proceed to Chunk 4: SOP Structure, Storage, and Update Workflow

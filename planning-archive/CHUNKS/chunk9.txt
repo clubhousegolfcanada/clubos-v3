@@ -1,0 +1,97 @@
+Claude Breakdown: Chunk 9 ? Notification Routing, Slack Escalation, and Role-Based Alerting
+
+? Scope
+
+Define how ClubOS V2 handles notifications, including Slack escalations, high-priority message routing, and per-operator alert controls. Ensures signal is scoped, timely, and role-relevant ? preventing alert fatigue and enabling response clarity.
+
+?? Cross-Referenced Corrections
+Early PlanFinal DecisionAll escalations sent manually? AI triggers Slack escalation automatically, based on rulesSingle Slack feed? Per-role or per-user Slack channel assignmentAll users notified equally? Notification scope defined by operator role and location group
+?? Dependencies
+* Slack App + Webhook integration
+* Notification logic layer in backend (role-aware)
+* Thread metadata + escalation reason included in payload
+
+?? Tasks
+
+[9.1] Escalation Trigger Routing
+
+AI triggers Slack notification when:
+* Action fails (e.g. reset did not resolve issue)
+* Confidence score below configured threshold
+* Message tagged as human_required
+* System anomaly detected (e.g. all PCs offline at once)
+
+Slack message format:
+{
+  "channel": "#mike-alerts",
+  "text": "Escalation: Bay 2 TrackMan not responding after reset",
+  "thread_id": "msg-9123",
+  "location": "Bedford",
+  "customer": "John D.",
+  "trigger": "AI reset failed",
+  "link": "https://clubos.app/thread/msg-9123"
+}
+
+[9.2] Role-Scoped Slack Channels
+
+Each operator or group is subscribed to relevant alerts only:
+{
+  "user": "mike",
+  "location_scope": ["Bedford", "Dartmouth"],
+  "alert_types": ["tech", "access", "emergency"],
+  "channel": "#mike-alerts"
+}
+Keeps irrelevant threads out of inbox and aligns to operator ownership
+
+[9.3] Alert Preferences + Controls
+
+Operators can configure alert scope:
+* Channel (shared or personal)
+* What categories they want:
+o only escalated
+o new customer messages
+o system anomalies
+* Alert frequency:
+o immediate
+o daily digest
+o grouped by thread
+
+Example config:
+{
+  "alert_frequency": "grouped",
+  "notify_on": ["escalation", "new message", "offline detection"],
+  "channel": "#tech-support"
+}
+
+[9.4] AI + Slack Interplay
+
+When AI escalates to Slack:
+* It stops responding in-thread
+* Thread status set to escalated
+* Slack alert includes:
+o Summary of actions attempted
+o Proposed next steps
+o Whether customer is still waiting
+
+If human responds in Slack and resolves, Claude:
+* Updates thread to resolved_by_human
+* Logs resolution path
+* Tags outcome quality if approved
+
+[9.5] Daily Summary / Digest (Optional)
+
+Optional feature:
+* Daily Slack digest of:
+o Unresolved escalations
+o High-signal failures
+o SOPs triggered more than 5x
+* Posted to #daily-clubhouse-digest or emailed
+
+? Expected Behavior
+* Only the right people are alerted, at the right time
+* Slack alerts are traceable, actionable, and scoped
+* Escalated threads pause AI activity until a human responds
+* Claude learns only from resolved + tagged escalations
+
+Chunk 10: Learning Governance, Category Merging, and SOP Evolution
+

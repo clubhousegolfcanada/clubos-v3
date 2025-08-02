@@ -1,0 +1,258 @@
+ClubOS V3 - Chunk 11: Ticket System for Facilities and Tech
+
+📍 Scope
+
+Define a lightweight but structured ticketing system for ClubOS V3. Supports ticket creation by AI or humans, tracks priority, type, resolution, SLAs, and ties back to message threads or system events. Integrates into all interfaces with relationship tracking and recurrence detection.
+
+🔄 Cross-Referenced Corrections
+Early Plan                    → Final Decision
+Ticket system undefined       → Use V1 model (Facilities + Tech categories, Low – Critical priority)
+AI did not create tickets    → AI can auto-create tickets from messages or system flags
+No ticket access in thread   → Message page includes one-tap ticket creation and view per thread
+No dependencies             → Full relationship tracking (blocks, parent, related)
+No SLAs                     → Priority-based SLA enforcement
+No recurrence detection     → Pattern recognition for systemic issues
+
+📦 Dependencies
+* Ticket table in DB (ticket_id, status, source, relationships, etc.)
+* Links to threads, users, locations, and system events
+* Simple ticket modal component (mobile + desktop)
+* SLA timer system
+* Template library
+
+🔧 Tasks
+
+[11.1] Enhanced Ticket Schema with Relationships
+{
+  "ticket_id": "T-30981",
+  "created_by": "OperatorGPT",
+  "submitted_by": "customer_1290",
+  "source": "message_thread",
+  "linked_thread": "msg_9182",
+  "category": "facilities",
+  "priority": "medium",
+  "status": "open",
+  "title": "No balls in Bay 2",
+  "description": "Customer reported missing balls during 6PM session",
+  "location": "Bedford",
+  "bay": "2",
+  "timestamp": "2025-08-01T17:28:00Z",
+  "assigned_to": null,
+  "relationships": {
+    "blocks": ["T-30982"],
+    "blocked_by": [],
+    "related_to": ["T-30980"],
+    "parent_ticket": "T-30975",
+    "child_tickets": []
+  },
+  "sla": {
+    "response_time": "1_hour",
+    "resolution_time": "4_hours",
+    "escalate_after": "2_hours",
+    "breached": false
+  },
+  "template_used": "ball_restock",
+  "recurrence": {
+    "is_recurring": true,
+    "similar_tickets": ["T-30920", "T-30945"],
+    "pattern": "daily_6pm"
+  }
+}
+
+[11.2] AI Ticket Creation Logic with Pattern Detection
+AI auto-creates tickets when:
+* Customer reports operational issue outside reset/unlock scope
+  ○ "Bathroom needs cleaning"
+  ○ "Projector is dim"
+  ○ "Golf balls missing"
+* System anomaly with no SOP resolution
+  ○ Persistent device offline
+  ○ Multiple failed actions
+* No immediate fix possible or escalation flagged
+
+AI also detects patterns:
+* Similar tickets at same location/time
+* Recurring issues across days/weeks
+* Systemic problems needing root cause
+
+Ticket is:
+* Categorized (facilities/tech)
+* Prioritized based on:
+  ○ Customer impact
+  ○ Revenue at risk
+  ○ Safety concerns
+  ○ Recurrence frequency
+* Linked to source thread/event
+* Checked against templates
+
+[11.3] Human Ticket Creation with Templates
+From any customer thread:
+* Tap "Create Ticket"
+* Template selector appears:
+  ○ Common issues listed
+  ○ Search by keyword
+  ○ "Custom" option
+* Pre-filled fields from template:
+  ○ Title
+  ○ Category
+  ○ Priority suggestion
+  ○ Required info checklist
+* Operator can:
+  ○ Modify any field
+  ○ Add notes
+  ○ Link related tickets
+  ○ Submit instantly
+
+Template library includes:
+{
+  "templates": [
+    {
+      "id": "ball_restock",
+      "title": "Golf balls need restocking",
+      "category": "facilities",
+      "default_priority": "medium",
+      "required_fields": ["bay_number", "quantity_remaining"],
+      "resolution_steps": ["Check storage", "Restock to 100", "Log count"]
+    },
+    {
+      "id": "trackman_hardware",
+      "title": "TrackMan hardware failure",
+      "category": "tech",
+      "default_priority": "high",
+      "required_fields": ["error_message", "last_reset_time"],
+      "linked_sop": "tech-013"
+    }
+  ]
+}
+
+[11.4] SLA Management and Enforcement
+Priority-based SLAs:
+{
+  "sla_config": {
+    "critical": {
+      "response_time": "15_minutes",
+      "resolution_time": "1_hour",
+      "escalate_after": "30_minutes"
+    },
+    "high": {
+      "response_time": "1_hour",
+      "resolution_time": "4_hours",
+      "escalate_after": "2_hours"
+    },
+    "medium": {
+      "response_time": "4_hours",
+      "resolution_time": "24_hours",
+      "escalate_after": "12_hours"
+    },
+    "low": {
+      "response_time": "24_hours",
+      "resolution_time": "72_hours",
+      "escalate_after": null
+    }
+  }
+}
+
+SLA tracking:
+* Timer starts on ticket creation
+* Warning at 75% of SLA
+* Alert at 90% of SLA
+* Breach triggers escalation
+* Dashboard shows SLA compliance %
+
+[11.5] Ticket Visibility and UI Integration
+Tickets visible in:
+* Message thread view
+  ○ Inline card showing linked ticket
+  ○ Status badge (open/resolved)
+  ○ Quick actions (assign, close)
+* Dedicated Tickets tab
+  ○ Filter by: location, priority, category, status
+  ○ Sort by: SLA deadline, created date, priority
+  ○ Bulk actions: assign, close multiple
+* Dashboard view
+  ○ Kanban board by status
+  ○ List view with grouping
+  ○ SLA countdown timers
+  ○ Relationship visualization
+
+Mobile optimizations:
+* Swipe to assign/close
+* Quick filter presets
+* Compact card view
+
+[11.6] Status Management with Workflow
+Ticket statuses and transitions:
+```
+open → in_progress → on_hold ↘
+  ↓         ↓            ↓      resolved
+  └─────────┴────────────┴───→ archived
+```
+
+Status rules:
+* Only assigned tickets can be "in_progress"
+* "on_hold" requires reason
+* "resolved" requires resolution notes
+* Auto-archive after 30 days resolved
+
+Operators can:
+* Bulk update status
+* Add resolution notes
+* Link to completed actions
+* Attach photos/documents
+
+[11.7] Recurrence Detection and Root Cause
+Automatic pattern detection:
+{
+  "recurrence_rules": {
+    "time_window": "7_days",
+    "similarity_threshold": 0.8,
+    "min_occurrences": 3,
+    "auto_escalate": true
+  }
+}
+
+When detected:
+* Parent ticket auto-created
+* Priority elevated
+* Root cause analysis prompt
+* Suggested preventive actions
+* Claude proposes new SOP
+
+Example detection:
+"3 'projector dim' tickets in Bay 4 this week.
+Possible causes: Bulb aging, power fluctuation
+Suggested: Schedule preventive replacement"
+
+[11.8] Future: Cost Tracking (V2.1)
+Schema supports but not implemented:
+{
+  "cost_tracking": {
+    "labor_hours": 1.5,
+    "hourly_rate": 35,
+    "parts_used": [
+      {"item": "projector_bulb", "cost": 89.99}
+    ],
+    "total_cost": 142.49,
+    "billable_to": "vendor_warranty"
+  }
+}
+
+[11.9] Future: External Integrations (V2.2)
+Planned integrations:
+* Vendor APIs (TrackMan, TruGolf)
+* Parts ordering systems
+* Contractor dispatch
+* Warranty tracking
+* Invoice generation
+
+🎯 Expected Behavior
+* Both humans and AI create tickets quickly with context
+* Templates ensure consistency and completeness
+* SLAs drive timely resolution with escalation
+* Relationships prevent duplicate work
+* Recurrence detection surfaces systemic issues
+* Each thread shows relevant tickets inline
+* Priority and revenue impact guide operator focus
+* Claude learns patterns but doesn't auto-resolve tickets
+
+This completes the ClubOS V3 specification.
