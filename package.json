@@ -1,6 +1,6 @@
 {
   "name": "clubos-v3",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "ClubOS V3 - AI-powered customer service system",
   "private": true,
   "workspaces": [

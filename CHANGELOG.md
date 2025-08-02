@@ -5,6 +5,23 @@ All notable changes to ClubOS V3 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-08-02
+
+### Added
+- **GitHub Repository** - Code now hosted at https://github.com/clubhousegolfcanada/clubos-v3
+- **CI/CD Pipeline** - GitHub Actions workflows for automated testing and deployment
+- **Security Scanning** - Automated vulnerability scanning with CodeQL and dependency checks
+- **Backend Service Tests** - Added unit tests for actionExecutor and notifications services
+- **Test Coverage** - Backend now at 95.9% test coverage (exceeding 80% target)
+- **Documentation** - GitHub secrets setup guide for deployment configuration
+
+### Changed
+- **Next.js Security Update** - Upgraded from 14.0.4 to 14.2.31 to fix critical vulnerabilities
+- **Production Readiness** - Multiple infrastructure improvements for deployment
+
+### Fixed
+- **Security Vulnerabilities** - Resolved 1 critical severity vulnerability in Next.js
+
 ## [0.1.0] - 2024-01-31
 
 ### Added
