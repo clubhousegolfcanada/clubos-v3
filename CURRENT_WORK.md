@@ -21,6 +21,51 @@ Last Updated: 2025-08-02 14:30
 [HANDOFF] Session 2025-08-02-001 Summary
 ========================================
 
+## 🎯 CRITICAL NEXT ACTIONS FOR USER
+
+### 1. GitHub Secrets Setup (REQUIRED)
+Go to: https://github.com/clubhousegolfcanada/clubos-v3/settings/secrets/actions
+
+Add these secrets:
+- `RAILWAY_TOKEN` - Get from Railway dashboard
+- `RAILWAY_TOKEN_STAGING` - For staging environment  
+- `VERCEL_TOKEN` - Get from Vercel account settings
+- `VERCEL_ORG_ID` - Your Vercel team ID
+- `VERCEL_PROJECT_ID` - Production project ID
+- `VERCEL_PROJECT_ID_STAGING` - Staging project ID
+- `SLACK_WEBHOOK` - For deployment notifications
+
+See: `docs/GITHUB_SECRETS_SETUP.md` for detailed instructions
+
+### 2. Create Deployment Accounts
+- [ ] Railway account at https://railway.app
+- [ ] Vercel account at https://vercel.com
+
+### 3. Update .env File
+Add your real API keys:
+- `OPENAI_API_KEY` - From OpenAI dashboard
+- `ANTHROPIC_API_KEY` - From Anthropic console
+- `SLACK_WEBHOOK_URL` - From Slack app settings
+
+## 📊 Session Summary
+- **GitHub**: Repository live at https://github.com/clubhousegolfcanada/clubos-v3
+- **CI/CD**: Automated pipelines ready (waiting for secrets)
+- **Testing**: Backend at 95.9% coverage
+- **Security**: All vulnerabilities fixed
+- **Version**: 0.4.1
+
+## 🚀 What Happens Next
+Once you add the GitHub secrets:
+1. Push any change to trigger CI/CD
+2. Tests will run automatically
+3. Staging deployment will happen on `staging` branch
+4. Production deployment will happen on `main` branch
+
+## 💡 For Next Claude Session
+Just say: "Continue with frontend testing setup" or "Help me deploy to Railway"
+
+---
+
 ## What I Accomplished
 - ✅ Built comprehensive audit and context system
 - ✅ Created automatic logging protocols

@@ -40,7 +40,11 @@ npm run lint
 npm run lint:fix
 ```
 
-**Note**: Tests run automatically before build/deploy to ensure code quality. See [TESTING_STRATEGY.md](./TESTING_STRATEGY.md) for details.
+**Current Status**: 
+- ✅ Backend: 95.9% test coverage
+- ⏳ Frontend: Testing setup pending
+
+**Note**: Tests run automatically before commits (Husky) and deploys (GitHub Actions). See [TESTING_STRATEGY.md](./TESTING_STRATEGY.md) for details.
 
 ## 🤖 For AI Coders
 **START HERE (in order):**
@@ -88,8 +92,11 @@ npm run lint:fix
 - Next.js 14 (frontend)
 - Railway + Vercel (deployment)
 
-## 📈 Version
-Current: **0.4.0** (See [CHANGELOG.md](./CHANGELOG.md))
+## 📈 Version & Status
+- Current: **0.4.1** (See [CHANGELOG.md](./CHANGELOG.md))
+- GitHub: https://github.com/clubhousegolfcanada/clubos-v3
+- CI/CD: Ready (needs secrets configuration)
+- Deployment: Pending Railway/Vercel setup
 
 ---
 *For detailed setup and contribution guidelines, see /docs*
