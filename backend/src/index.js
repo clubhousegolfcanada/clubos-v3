@@ -5,6 +5,10 @@ const config = require('./config');
 const requestLogger = require('./middleware/requestLogger');
 const { errorMiddleware } = require('./middleware/errorLogger');
 const { securityHeaders, rateLimiters, additionalSecurity } = require('./middleware/security');
+const logger = require('./utils/logger');
+const cacheService = require('./services/cache/cacheService');
+const queueManager = require('./services/queue/queueManager');
+const healthMonitor = require('./services/healthMonitor');
 
 const app = express();
 
@@ -43,6 +47,17 @@ apiRouter.use('/input-events', require('./routes/inputEvents'));
 
 app.use('/api', apiRouter);
 
+// Bull Board for queue monitoring (admin only)
+if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_QUEUE_UI === 'true') {
+  app.use('/admin/queues', queueManager.getRouter());
+}
+
+// Track requests for health monitoring
+app.use((req, res, next) => {
+  healthMonitor.incrementRequestCount();
+  next();
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ 
@@ -55,30 +70,79 @@ app.use((req, res) => {
 // Error handler (must be last)
 app.use(errorMiddleware);
 
+// Initialize services
+async function initializeServices() {
+  try {
+    // Initialize cache
+    await cacheService.initialize();
+    logger.info('Cache service initialized');
+    
+    // Initialize queue manager
+    queueManager.initialize();
+    logger.info('Queue manager initialized');
+    
+    // Warm up cache with common queries
+    if (process.env.NODE_ENV === 'production') {
+      await cacheService.warmupCache();
+    }
+  } catch (error) {
+    logger.error('Failed to initialize services:', error);
+    // Continue anyway - app should work without cache/queues
+  }
+}
+
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down gracefully...');
+  logger.info('SIGTERM received, shutting down gracefully...');
+  
   server.close(() => {
-    console.log('Server closed');
+    logger.info('HTTP server closed');
   });
+  
+  // Shutdown services
+  try {
+    await queueManager.shutdown();
+    await cacheService.shutdown();
+    logger.info('Services shutdown complete');
+  } catch (error) {
+    logger.error('Error during service shutdown:', error);
+  }
   
   // Close database pool
   try {
+    const pool = require('./db/pool');
     await pool.end();
-    console.log('Database pool closed');
+    logger.info('Database pool closed');
   } catch (error) {
-    console.error('Error closing database pool:', error);
+    logger.error('Error closing database pool:', error);
   }
   
   process.exit(0);
 });
 
+// Handle uncaught errors
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  healthMonitor.incrementErrorCount(error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', { promise, reason });
+  healthMonitor.incrementErrorCount(new Error(String(reason)));
+});
+
 // Start server
-const server = app.listen(config.port, () => {
-  console.log('='.repeat(50));
-  console.log(`🚀 ClubOS V3 Backend`);
-  console.log(`📍 Environment: ${config.env}`);
-  console.log(`🔌 Port: ${config.port}`);
-  console.log(`🔗 Health: http://localhost:${config.port}/health`);
-  console.log('='.repeat(50));
+const server = app.listen(config.port, async () => {
+  logger.info('='.repeat(50));
+  logger.info('🚀 ClubOS V3 Backend Starting...');
+  logger.info(`📍 Environment: ${config.env}`);
+  logger.info(`🔌 Port: ${config.port}`);
+  logger.info(`🔗 Health: http://localhost:${config.port}/health`);
+  logger.info(`📊 Queue UI: http://localhost:${config.port}/admin/queues`);
+  
+  // Initialize services after server starts
+  await initializeServices();
+  
+  logger.info('✅ Server ready to accept requests');
+  logger.info('='.repeat(50));
 });

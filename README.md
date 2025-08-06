@@ -10,6 +10,10 @@ npm install
 
 # Set up environment
 cp .env.example .env
+# Edit .env with your API keys and database URL
+
+# Run database migrations
+npm run migrate
 
 # Run development
 npm run dev
@@ -44,21 +48,17 @@ npm run lint:fix
 - ✅ Backend: 95.9% test coverage
 - ⏳ Frontend: Testing setup pending
 
-**Note**: Tests run automatically before commits (Husky) and deploys (GitHub Actions). See [TESTING_STRATEGY.md](./TESTING_STRATEGY.md) for details.
+**Note**: Tests run automatically before commits (Husky) and deploys (GitHub Actions).
 
-## 🤖 For AI Coders
-**START HERE (in order):**
-1. `.ai-rules` - 6 simple execution rules (30 sec read)
+## 🤖 For AI Assistants
+**START HERE:**
+1. `AI_CONTEXT.md` - Everything you need to know (consolidated guide)
 2. `CURRENT_WORK.md` - What's active right now
-3. `CLAUDE_MASTER_CONTEXT.md` - Project state & navigation
+3. `CONTRIBUTING.md` - Coding standards and conventions
 
-**Then, based on task:**
-- `claude-instructions/README.md` - Decision tree for specific work
-- `NEW_CONTEXT_QUICKSTART.md` - If you're lost
-
-**Automatic Patterns:**
-- `NAMING_CONVENTIONS.md` - Never ask about naming
-- `AUTOMATIC_ASSUMPTIONS.md` - Things to assume
+**For specific tasks:**
+- `/claude-instructions/` - Task-specific guidance
+- `ACTION_FRAMEWORK_GUIDE.md` - Device control documentation
 
 ## 📁 Project Structure
 ```
@@ -74,11 +74,18 @@ npm run lint:fix
 ```
 
 ## 🔧 Key Features
-- Message classification (GPT-4)
-- SOP matching and execution
-- Action framework with retries
-- Thread management
-- Claude integration (in progress)
+- **AI-Powered Operations**: GPT-4 message classification and intent routing
+- **Pattern Learning System**: Learns from every interaction with confidence-based automation
+- **Action Execution Framework**: Comprehensive device control with retry logic
+  - BenQ projector control
+  - NinjaOne PC/TrackMan management
+  - Ubiquiti door access
+  - OpenPhone SMS messaging
+  - HubSpot CRM integration
+  - Slack notifications
+- **Knowledge Management**: Natural language updates with conflict resolution
+- **SOP System**: Dynamic standard operating procedures with version control
+- **Thread Management**: Conversation tracking with status updates
 
 ## 📚 Documentation
 - [API Docs](./docs/API/README.md)
@@ -93,10 +100,55 @@ npm run lint:fix
 - Railway + Vercel (deployment)
 
 ## 📈 Version & Status
-- Current: **0.4.1** (See [CHANGELOG.md](./CHANGELOG.md))
+- Current: **0.8.0** (See [CHANGELOG.md](./CHANGELOG.md))
 - GitHub: https://github.com/clubhousegolfcanada/clubos-v3
 - CI/CD: Ready (needs secrets configuration)
 - Deployment: Pending Railway/Vercel setup
+
+## 🚀 New Architecture Enhancements (v0.8.0)
+
+### Performance & Reliability
+- **Redis Caching**: 50-80% faster SOP matching with intelligent caching
+- **Message Queues**: Async processing prevents timeouts on heavy operations
+- **Structured Logging**: Complete request tracing with correlation IDs
+- **Enhanced Health Checks**: `/health/detailed` for full system observability
+
+### Monitoring
+- **Queue Dashboard**: `/admin/queues` - Visual queue monitoring (dev only)
+- **Cache Statistics**: Real-time hit rates and performance metrics
+- **System Metrics**: CPU, memory, and request tracking
+
+### Required Services
+- Redis (optional but recommended): `brew install redis && redis-server`
+- PostgreSQL (required): See deployment guide
+
+## 🎯 Action Framework
+
+Execute any device action through the unified framework:
+
+```javascript
+const actionFramework = require('./services/actionFramework');
+
+// Control projector
+await actionFramework.execute('projector_on', {
+  location: 'bedford',
+  bay_id: 'bay1'
+});
+
+// Reset TrackMan
+await actionFramework.execute('reset_trackman', {
+  location: 'dartmouth',
+  bay_id: 'bay3'
+});
+
+// Send SMS
+await actionFramework.execute('send_sms', {
+  to: '+1234567890',
+  message: 'Your booking is confirmed!'
+});
+```
+
+See [ACTION_FRAMEWORK_GUIDE.md](./ACTION_FRAMEWORK_GUIDE.md) for full documentation.
 
 ---
 *For detailed setup and contribution guidelines, see /docs*

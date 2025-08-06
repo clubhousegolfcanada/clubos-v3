@@ -5,6 +5,162 @@ All notable changes to ClubOS V3 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2025-08-05
+
+### Added - Architecture Enhancements
+- **Redis Caching Layer** - Performance optimization with intelligent caching
+  - SOP pattern caching (5-minute TTL)
+  - Pattern matching results caching (10-minute TTL) 
+  - Knowledge base caching (30-minute TTL)
+  - Cache invalidation strategies
+  - Cache warmup for common queries
+  
+- **Winston Structured Logging** - Enterprise-grade logging system
+  - Correlation ID tracking across requests
+  - Structured JSON logging for production
+  - Daily log rotation with retention policies
+  - Specialized logging methods (database, patterns, cache, integrations)
+  - Performance timing helpers
+  - Audit and security logging
+  
+- **Enhanced Health Monitoring** - Comprehensive system observability
+  - Basic health endpoint with uptime and version
+  - Detailed health with all service statuses
+  - Liveness and readiness probes for Kubernetes
+  - System metrics (CPU, memory, load average)
+  - Request/error tracking
+  - Database connection pool monitoring
+  - Redis cache statistics
+  - External API health checks
+  
+- **Bull Message Queue System** - Async job processing
+  - Pattern processing queue with retry logic
+  - Action execution queue with timeout management
+  - Notification queue for async messaging
+  - SOP learning queue for background updates
+  - Bull Board UI for queue monitoring (/admin/queues)
+  - Exponential backoff for failed jobs
+  - Graceful shutdown handling
+
+### Changed
+- **Application Startup** - Services initialize with proper error handling
+- **Error Handling** - Uncaught exceptions and rejections tracked
+- **Shutdown Process** - Graceful shutdown of all services
+
+### Technical Implementation
+- **Cache Service**: `/backend/src/services/cache/`
+- **Queue Manager**: `/backend/src/services/queue/`
+- **Health Monitor**: `/backend/src/services/healthMonitor.js`
+- **Enhanced Logger**: `/backend/src/utils/logger.js`
+- **Dependencies**: winston, redis, ioredis, bull, @bull-board
+
+## [0.7.0] - 2025-08-05
+
+### Added
+- **Comprehensive Action Execution Framework** - Extensible system for all device integrations
+  - Plugin architecture supporting unlimited device handlers
+  - Circuit breaker pattern preventing cascading failures
+  - Advanced retry logic with exponential backoff
+  - Real-time performance monitoring and statistics
+  - Event-driven architecture for action tracking
+  
+- **Device Handlers** - Production-ready integrations
+  - **BenQ Projector Handler**: Power control, input switching, status monitoring
+  - **NinjaOne Handler**: PC/TrackMan control (reset, reboot, wake, lock)
+  - **Ubiquiti Handler**: Door access control with auto-lock timers
+  - **OpenPhone Handler**: SMS messaging with booking templates
+  - **HubSpot Handler**: CRM operations (contacts, tickets, activities)
+  - **Slack Handler**: Enhanced notifications with rich formatting
+  
+- **Action Framework Features**
+  - Centralized action execution through `actionFramework.execute()`
+  - Automatic logging of all actions with correlation IDs
+  - Handler health checks and circuit breaker management
+  - Runtime configuration without code changes
+  - Backward compatibility with legacy action handlers
+
+- **Database Enhancements**
+  - Migration 011: Comprehensive action logging schema
+  - Handler performance statistics tracking
+  - Circuit breaker state persistence
+  - Runtime configuration storage
+
+### Changed
+- **Action Executor**: Now routes to new framework for supported actions
+- **Extensibility**: Adding new integrations now requires only creating a handler
+
+### Technical Implementation
+- **Framework Location**: `/backend/src/services/actionFramework/`
+- **Handlers**: Extend BaseHandler for consistent behavior
+- **Statistics**: Real-time performance metrics per handler
+- **Configuration**: Environment-based with runtime overrides
+
+## [0.6.0] - 2025-08-05
+
+### Added
+- **Knowledge Management System** - Natural language knowledge updates with conflict resolution
+  - Database schema for versioned knowledge storage (migration 010)
+  - Natural language processing via GPT-4 for knowledge extraction
+  - Conflict detection and user confirmation workflow
+  - REST API endpoints for knowledge CRUD operations
+  - Knowledge search and retrieval functionality
+  - Example: "The phone number for Bedford is 902-555-1234" → System detects conflicts and asks for confirmation
+
+### Architecture Review
+- Reviewed LLM routing architecture document vs implementation
+- Identified that pattern-based system is more efficient than proposed Sub-LLMs
+- Confirmed Slack integration exists but needs enhancement for approvals
+- External integrations (NinjaOne, BenQ, etc.) are placeholders
+
+### Testing & Quality
+- **Current Test Status**: 5 failed, 4 passed (9 test suites total)
+- **Missing Tests**: knowledgeManager, enhancedServices, pattern modules
+- **Linting Issues**: 10+ errors need fixing before deployment
+- **Environment**: Required variables not set (DATABASE_URL, JWT_SECRET, OPENAI_API_KEY)
+
+## [0.5.0] - 2025-08-03
+
+### Added
+- **Decision Memory System** - Complete implementation of confidence-based automation from CLUBOS_V3_CORE_ARCHITECTURE.md
+  - **Phase 1: Foundation Enhancement**
+    - Database migrations for decision patterns, security enhancements, and compliance tracking
+    - UnifiedPatternEngine for processing all events with confidence scoring
+    - ConfidenceEvolution service for patterns that learn from success/failure
+    - AnomalyDetector with multi-factor anomaly detection
+    - APIKeyManager with automatic rotation and compromise detection
+    - ComplianceLogger for GDPR-compliant audit trails
+  - **Phase 1: Security Middleware**
+    - autoSanitize middleware preventing injection attacks automatically
+    - zeroTrust middleware validating everything, trusting nothing
+    - errorMasking middleware for smart error handling without info leakage
+    - adaptiveRateLimit with ML-based rate limiting
+    - PerformanceGuard with DOS protection and circuit breakers
+  - **Phase 2: Pattern Learning System**
+    - BasePatternModule providing foundation for all pattern types
+    - ErrorPatternModule integrating with existing recursive learning
+    - DecisionPatternModule for general business decisions
+    - BookingPatternModule for reservation patterns
+    - AccessPatternModule for security/access patterns
+  - **Phase 2: Automation Rules**
+    - 95% confidence: Auto-execution without human intervention
+    - 75% confidence: Suggest with 30-second timeout for auto-execution
+    - 50% confidence: Queue for human approval
+    - <50% confidence: Treat as anomaly requiring immediate attention
+    - Human override tracking with automatic confidence adjustment
+    - Cross-domain learning sharing insights between modules
+
+### Changed
+- **Architecture Evolution** - System now implements "never make the same decision twice" philosophy
+- **Human Intervention** - Reduced to only true anomalies and edge cases as designed
+- **Pattern Storage** - Unified decision_patterns table replacing fragmented approach
+
+### Technical Details
+- **Database**: 9 new migration files adding comprehensive pattern tracking
+- **Services**: 15 new service modules for pattern processing and security
+- **Integration**: PatternIntegration module bridging patterns with application
+- **Testing**: Comprehensive test suite for automation rules
+- **Examples**: Pattern automation demo showing all confidence levels
+
 ## [0.4.1] - 2025-08-02
 
 ### Added
@@ -14,6 +170,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Backend Service Tests** - Added unit tests for actionExecutor and notifications services
 - **Test Coverage** - Backend now at 95.9% test coverage (exceeding 80% target)
 - **Documentation** - GitHub secrets setup guide for deployment configuration
+- **Booking Platform Plan** - Comprehensive 20-week implementation plan for future booking system (see BOOKING_PLATFORM_COMPREHENSIVE_PLAN.md)
 
 ### Changed
 - **Next.js Security Update** - Upgraded from 14.0.4 to 14.2.31 to fix critical vulnerabilities

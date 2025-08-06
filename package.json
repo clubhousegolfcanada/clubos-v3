@@ -1,6 +1,6 @@
 {
   "name": "clubos-v3",
-  "version": "0.4.1",
+  "version": "0.7.0",
   "description": "ClubOS V3 - AI-powered customer service system",
   "private": true,
   "workspaces": [
@@ -48,5 +48,15 @@
     "url": "git+https://github.com/yourusername/clubos-v3.git"
   },
   "author": "The Clubhouse",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@bull-board/api": "^6.12.0",
+    "@bull-board/express": "^6.12.0",
+    "bull": "^4.16.5",
+    "bullmq": "^5.56.9",
+    "ioredis": "^5.7.0",
+    "redis": "^5.8.0",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
+  }
 }

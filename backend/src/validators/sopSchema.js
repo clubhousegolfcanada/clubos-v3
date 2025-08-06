@@ -1,5 +1,7 @@
 const Ajv = require('ajv');
+const addFormats = require('ajv-formats');
 const ajv = new Ajv();
+addFormats(ajv);
 
 // JSON Schema for SOP validation
 const sopSchema = {

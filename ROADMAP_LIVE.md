@@ -33,10 +33,10 @@ The heart of ClubOS that doesn't change:
 
 ### Current Sprint (Aug 2025)
 ```markdown
-[SPRINT: Production Readiness & Infrastructure]
-- Goal: Implement core coding practices + Deploy to staging
-- Timeline: 3 weeks
-- Progress: Week 1 mostly complete!
+[SPRINT: Environment Setup & Integration]
+- Goal: Get system running with working tests
+- Timeline: 2 weeks
+- Status: Documentation consolidated, needs env setup
 ```
 
 #### ✅ Completed - Production Readiness (Week 1)
@@ -97,6 +97,46 @@ The heart of ClubOS that doesn't change:
    - SOP effectiveness dashboard
    - Response time metrics
    - Cost analysis
+
+### Phase 3: Future Considerations
+
+#### Booking Platform (Not Active)
+- **Status**: Comprehensive plan documented
+- **Timeline**: 20 weeks when approved
+- **Architecture**: Standalone microservice
+- **Details**: See BOOKING_PLATFORM_COMPREHENSIVE_PLAN.md
+- **Decision**: Deferred until core V3 features stable
+
+### Phase 4: Adaptive Learning & Pattern Recognition
+1. **Session-Level Reflex Memory** `[latent capability]`
+   - Track interaction context within sessions
+   - Adaptive tone and escalation paths
+   - Post-session human review
+
+2. **Historical Log Recall** `[latent capability]`
+   - Semantic similarity matching (≥95%)
+   - Past resolution suggestions
+   - Learning from operator decisions
+
+3. **Customer Behavior Patterns** `[latent capability]`
+   - Detect recurring behaviors (resets, cancellations)
+   - Surface patterns for human review
+   - Store approved decisions as reflex logic
+
+4. **Time/Location Heuristics** `[latent capability]`
+   - Incident clustering analysis
+   - Predictive SOP pre-loading
+   - Location-based pattern detection
+
+5. **SOP Evolution Tracking** `[latent capability]`
+   - Track edge cases and overrides
+   - Propose SOP updates after patterns emerge
+   - Version-controlled improvements
+
+6. **Remote Environment Control** `[depends on: NinjaOne API]`
+   - Sensor-triggered actions with approval
+   - Predictive reset heuristics
+   - Historical outcome tracking
 
 ---
 

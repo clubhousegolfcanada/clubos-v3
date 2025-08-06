@@ -2,104 +2,38 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../db/pool');
 const axios = require('axios');
+const healthMonitor = require('../services/healthMonitor');
 
 /**
  * Comprehensive health check endpoints
  */
 
 // Basic health check
-router.get('/', (req, res) => {
-  res.json({
-    status: 'ok',
-    service: 'clubos-v3-backend',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV
-  });
+router.get('/', async (req, res) => {
+  const health = await healthMonitor.getBasicHealth();
+  const statusCode = health.status === 'healthy' ? 200 : 503;
+  res.status(statusCode).json(health);
 });
 
-// Detailed health check
+// Detailed health check with all metrics
 router.get('/detailed', async (req, res) => {
-  const checks = {
-    timestamp: new Date().toISOString(),
-    status: 'ok',
-    version: require('../../package.json').version,
-    environment: process.env.NODE_ENV,
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    checks: {}
-  };
-  
-  // Database check
-  try {
-    const start = Date.now();
-    const result = await pool.query('SELECT COUNT(*) FROM sop WHERE active = true');
-    checks.checks.database = {
-      status: 'healthy',
-      responseTime: Date.now() - start,
-      activeSops: parseInt(result.rows[0].count)
-    };
-  } catch (error) {
-    checks.checks.database = {
-      status: 'unhealthy',
-      error: error.message
-    };
-    checks.status = 'degraded';
-  }
-  
-  // OpenAI check
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      const start = Date.now();
-      const response = await axios.get('https://api.openai.com/v1/models', {
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-        },
-        timeout: 5000
-      });
-      checks.checks.openai = {
-        status: 'healthy',
-        responseTime: Date.now() - start,
-        available: response.status === 200
-      };
-    } catch (error) {
-      checks.checks.openai = {
-        status: 'unhealthy',
-        error: error.message
-      };
-      checks.status = 'degraded';
-    }
-  }
-  
-  // Slack webhook check (optional)
-  if (process.env.SLACK_WEBHOOK_URL) {
-    checks.checks.slack = {
-      status: 'configured',
-      webhook: 'present'
-    };
-  }
-  
-  // Check recent errors
-  try {
-    const errorResult = await pool.query(
-      `SELECT COUNT(*) as error_count 
-       FROM action_log 
-       WHERE outcome = 'failed' 
-       AND timestamp > NOW() - INTERVAL '1 hour'`
-    );
-    checks.checks.recentErrors = {
-      lastHour: parseInt(errorResult.rows[0].error_count)
-    };
-  } catch (error) {
-    // Table might not exist yet
-    checks.checks.recentErrors = {
-      status: 'unknown'
-    };
-  }
-  
-  // Overall status
-  const statusCode = checks.status === 'ok' ? 200 : 503;
-  res.status(statusCode).json(checks);
+  const health = await healthMonitor.getDetailedHealth();
+  const statusCode = health.status === 'healthy' ? 200 : 
+                     health.status === 'degraded' ? 200 : 503;
+  res.status(statusCode).json(health);
+});
+
+// Liveness probe (for k8s)
+router.get('/live', async (req, res) => {
+  const probe = await healthMonitor.getLivenessProbe();
+  res.json(probe);
+});
+
+// Readiness probe (for k8s/deployment)
+router.get('/ready', async (req, res) => {
+  const probe = await healthMonitor.getReadinessProbe();
+  const statusCode = probe.ready ? 200 : 503;
+  res.status(statusCode).json(probe);
 });
 
 // Database-specific health check

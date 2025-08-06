@@ -2,19 +2,36 @@ const axios = require('axios');
 const { executeResetTrackman, executeUnlockDoor } = require('./remoteActions');
 const { validateCustomerAction } = require('./booking');
 const notificationService = require('./notifications');
+const actionFramework = require('./actionFramework');
 
-// Action execution handlers
-const actionHandlers = {
+// Legacy action execution handlers (being phased out)
+const legacyHandlers = {
   reset_trackman: resetTrackMan,
   unlock_door: unlockDoor,
   escalate: escalateToSlack,
   send_message: sendMessage
 };
 
+// New action types supported by the framework
+const frameworkActions = [
+  'projector_on', 'projector_off', 'projector_input',
+  'reset_trackman', 'reboot_pc', 'wake_pc', 'lock_pc',
+  'unlock_door', 'lock_door', 'check_door_status',
+  'send_sms', 'send_message',
+  'update_contact', 'create_ticket', 'log_activity',
+  'escalate', 'notify_team'
+];
+
 async function executeAction(actionType, context) {
+  // Use new framework for supported actions
+  if (frameworkActions.includes(actionType)) {
+    return actionFramework.execute(actionType, context);
+  }
+  
+  // Fall back to legacy handlers
   try {
     // Check if we have a handler for this action
-    const handler = actionHandlers[actionType];
+    const handler = legacyHandlers[actionType];
     if (!handler) {
       return {
         outcome: 'failed',
