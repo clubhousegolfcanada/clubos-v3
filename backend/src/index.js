@@ -47,6 +47,10 @@ apiRouter.use('/input-events', require('./routes/inputEvents'));
 
 app.use('/api', apiRouter);
 
+// Admin routes (temporary for setup)
+const adminRoutes = require('./routes/admin');
+app.use('/admin', adminRoutes);
+
 // Bull Board for queue monitoring (admin only)
 if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_QUEUE_UI === 'true') {
   app.use('/admin/queues', queueManager.getRouter());
