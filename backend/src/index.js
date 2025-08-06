@@ -114,7 +114,7 @@ process.on('SIGTERM', async () => {
   
   // Close database pool
   try {
-    const pool = require('./db/pool');
+    const { pool } = require('./db/pool');
     await pool.end();
     logger.info('Database pool closed');
   } catch (error) {

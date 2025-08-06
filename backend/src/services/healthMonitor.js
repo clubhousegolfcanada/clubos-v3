@@ -1,4 +1,4 @@
-const pool = require('../db/pool');
+const { pool } = require('../db/pool');
 const redisClient = require('./cache/redisClient');
 const cacheService = require('./cache/cacheService');
 const logger = require('../utils/logger');
